@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Soccer Time Tracker</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background-color: #f0f0f0;
+      color: #333;
+    }
+    .player {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding: 10px;
+      background-color: #fff;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .player-info {
+      display: flex;
+      align-items: center;
+    }
+    .name {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    .green {
+      color: green;
+    }
+    .orange {
+      color: orange;
+    }
+    .red {
+      color: red;
+    }
+    .gray {
+      color: gray;
+    }
+    .alert {
+      margin-left: 10px;
+      color: red;
+      font-weight: bold;
+    }
+    table {
+      border-collapse: collapse;
+      margin-top: 10px;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid #aaa;
+      padding: 6px 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #eee;
+    }
+    button {
+      margin-right: 6px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      .player {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .player-info {
+        margin-bottom: 10px;
+      }
+      button {
+        padding: 4px 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Soccer Time Tracker</h1>
+
+  <label for="quarter">Quarter:</label>
+  <select id="quarter">
+    <option value="Q1">Q1</option>
+    <option value="Q2">Q2</option>
+    <option value="Q3">Q3</option>
+    <option value="Q4">Q4</option>
+    <option value="OT">OT</option>
+  </select>
+
+  <br><br>
+
+  <label for="rotation">Rotation time (minutes):</label>
+  <input type="number" id="rotation" value="5" min="1" style="width: 50px;"> minutes
+
+  <br><br>
+
+  <label for="team-select">Select Team:</label>
+  <select id="team-select" onchange="renderPlayers(); updateCaptainOptions();">
+    <option value="">None</option>
+  </select>
+  <button onclick="createTeam()">Create Team</button>
+
+  <br><br>
+
+  <label for="captain-select">Select Team Captain:</label>
+  <select id="captain-select">
+    <option value="">None</option>
+  </select>
+
+  <div style="margin-top: 15px;">
+    <button onclick="addPlayer()">Add Player</button>
+    <button onclick="subOutAll()">Sub Out All</button>
+    <button onclick="clearAll()">Clear All</button>
+    <button onclick="clearAllTime()">Clear All Time</button> <!-- Clear All Time Button -->
+  </div>
+
+  <div id="players" style="margin-top: 20px;"></div>
+
+  <h2 style="margin-top: 40px;">Rotation History</h2>
+  <div id="rotation-log"></div>
+
+  <script>
+    let teams = {};
+    let currentTeam = '';
+
+    function createTeam() {
+      const teamName = prompt("Enter team name:");
+      if (!teamName) return;
+
+      teams[teamName] = [];
+      updateTeamOptions();
+      saveTeams();
+    }
+
+    function updateTeamOptions() {
+      const teamSelect = document.getElementById('team-select');
+      teamSelect.innerHTML = '<option value="">None</option>';
+      Object.keys(teams).forEach(team => {
+        const option = document.createElement('option');
+        option.value = team;
+        option.textContent = team;
+        teamSelect.appendChild(option);
+      });
+    }
+
+    function saveTeams() {
+      localStorage.setItem('soccerTeams', JSON.stringify(teams));
+    }
+
+    function loadTeams() {
+      const data = localStorage.getItem('soccerTeams');
+      if (data) {
+        teams = JSON.parse(data);
+      }
+      updateTeamOptions();
+    }
+
+function addPlayer() {
+      if (!currentTeam) {
+        alert("Please select a team first.");
+        return;
+      }
+
+      const name = prompt("Enter player name:");
+      if (!name) return;
+
+      const player = {
+        name,
+        totalTime: 0,
+        onField: false,
+        lastTimestamp: null,
+        sessionStart: null,
+        rotationLog: [],
+        notified: false,
+        hasPlayed: false
+      };
+      teams[currentTeam].push(player);
+      saveTeams();
+      renderPlayers();
+      renderRotationLog();
+      updateCaptainOptions();
+    }
+
+    function renderPlayers() {
+      currentTeam = document.getElementById('team-select').value;
+      header = document.querySelector('h1');
+      header.textContent = currentTeam ? `${currentTeam} Time Tracker` : 'Soccer Time Tracker';
+      if (!currentTeam) return;
+
+      const now = Date.now();
+      const rotationMinutes = parseInt(document.getElementById('rotation').value) || 5;
+      const rotationSeconds = rotationMinutes * 60;
+
+      teams[currentTeam].forEach(p => {
+        if (p.onField) {
+          p.currentDisplayTime = p.totalTime + Math.floor((now - p.lastTimestamp) / 1000);
+          p.currentSessionTime = Math.floor((now - p.sessionStart) / 1000);
+        } else {
+          p.currentDisplayTime = p.totalTime;
+          p.currentSessionTime = 0;
+        }
+      });
+
+      const onField = teams[currentTeam].filter(p => p.onField)
+        .sort((a, b) => b.currentSessionTime - a.currentSessionTime);
+      const offField = teams[currentTeam].filter(p => !p.onField)
+        .sort((a, b) => a.totalTime - b.totalTime);
+
+      const container = document.getElementById('players');
+      container.innerHTML = '';
+
+      [...onField, ...offField].forEach((p, i) => {
+        const totalTimeDisplay = formatTime(p.currentDisplayTime);
+        const sessionTime = p.currentSessionTime;
+
+        let colorClass = '';
+        let alert = '';
+
+        if (p.onField) {
+          if (sessionTime >= rotationSeconds) {
+            colorClass = 'red';
+            alert = '🔔';
+            if (!p.notified) {
+              p.notified = true;
+              if (Notification.permission === 'granted') {
+                new Notification(`${p.name} has exceeded the rotation time!`);
+              }
+              playDing();
+            }
+          } else if (sessionTime >= rotationSeconds * 0.8) {
+            colorClass = 'orange';
+          } else {
+            colorClass = 'green';
+          }
+        } else if (p.totalTime === 0) {
+          colorClass = 'gray';
+        }
+
+        const isCaptain = document.getElementById('captain-select').value === p.name;
+        const playerName = isCaptain ? `👑 ${p.name}` : p.name;
+
+        container.innerHTML += `
+          <div class="player">
+            <div class="player-info">
+              <span class="name ${colorClass}">${playerName}</span> - ${totalTimeDisplay}
+            </div>
+            <div>
+              <button onclick="toggleField(${teams[currentTeam].indexOf(p)})">
+                ${p.onField ? 'Sub Out' : 'Sub In'}
+              </button>
+              <button onclick="editPlayerName(${teams[currentTeam].indexOf(p)})">✏️</button>
+              <button onclick="removePlayer(${teams[currentTeam].indexOf(p)})">🗑️</button>
+              ${alert ? `<span class="alert">${alert}</span>` : ''}
+            </div>
+          </div>`;
+      });
+    }
+
+    function updateCaptainOptions() {
+      const captainSelect = document.getElementById('captain-select');
+      const currentTeam = document.getElementById('team-select').value;
+      captainSelect.innerHTML = '<option value="">None</option>';
+      if (!currentTeam) return;
+      console.log(currentTeam);
+      teams[currentTeam].forEach(player => {
+        const option = document.createElement('option');
+        option.value = player.name;
+        option.textContent = player.name;
+        captainSelect.appendChild(option);
+      });
+    }
+
+    function clearAll() {
+      if (confirm("Clear all players and rotation history?")) {
+        teams[currentTeam] = [];
+        saveTeams();
+        renderPlayers();
+        renderRotationLog();
+        updateCaptainOptions();
+      }
+    }
+
+    function clearAllTime() {
+      if (confirm("Are you sure you want to clear all time data? Players will not be removed, but their total and session times will be reset.")) {
+        teams[currentTeam].forEach(p => {
+          p.totalTime = 0;
+          p.sessionStart = null;
+          p.lastTimestamp = null;
+          p.rotationLog = []; // Optional: Clears rotation history too
+          p.onField = false; // Reset color to grey if time is 0
+        });
+        saveTeams();
+        renderPlayers();
+        renderRotationLog();
+      }
+    }
+
+    function toggleField(index) {
+      const player = teams[currentTeam][index];
+      const now = Date.now();
+
+      if (player.onField) {
+        const sessionTime = Math.floor((now - player.sessionStart) / 1000);
+        player.totalTime += sessionTime;
+        player.rotationLog.push({
+          in: new Date(player.sessionStart).toLocaleTimeString(),
+          out: new Date(now).toLocaleTimeString(),
+          duration: formatTime(sessionTime),
+          quarter: document.getElementById('quarter').value
+        });
+        player.onField = false;
+        player.lastTimestamp = null;
+        player.sessionStart = null;
+        player.notified = false;
+      } else {
+        player.onField = true;
+        player.lastTimestamp = now;
+        player.sessionStart = now;
+        player.notified = false;
+        player.hasPlayed = true;
+      }
+
+      saveTeams();
+      renderPlayers();
+      renderRotationLog();
+    }
+
+    function subOutAll() {
+      const now = Date.now();
+      const quarter = document.getElementById('quarter').value;
+
+      teams[currentTeam].forEach(player => {
+        if (player.onField) {
+          const sessionTime = Math.floor((now - player.sessionStart) / 1000);
+          player.totalTime += sessionTime;
+          player.rotationLog.push({
+            in: new Date(player.sessionStart).toLocaleTimeString(),
+            out: new Date(now).toLocaleTimeString(),
+            duration: formatTime(sessionTime),
+            quarter
+          });
+          player.onField = false;
+          player.lastTimestamp = null;
+          player.sessionStart = null;
+          player.notified = false;
+        }
+      });
+
+      saveTeams();
+      renderPlayers();
+      renderRotationLog();
+    }
+
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function renderRotationLog() {
+      const logContainer = document.getElementById('rotation-log');
+      const logs = [];
+
+      if (!currentTeam) return;
+      teams[currentTeam].forEach(p => {
+        p.rotationLog.forEach(entry => {
+          logs.push({ name: p.name, ...entry });
+        });
+      });
+
+      logs.sort((a, b) => new Date(b.out) - new Date(a.out));
+
+      if (logs.length === 0) {
+        logContainer.innerHTML = '<p>No rotations yet.</p>';
+        return;
+      }
+
+      logContainer.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>Subbed In</th>
+              <th>Subbed Out</th>
+              <th>Duration</th>
+              <th>Quarter</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${logs.map(log => `
+              <tr>
+                <td>${log.name}</td>
+                <td>${log.in}</td>
+                <td>${log.out}</td>
+                <td>${log.duration}</td>
+                <td>${log.quarter || ''}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function editPlayerName(index) {
+      const newName = prompt("Edit player name:", teams[currentTeam][index].name);
+      if (newName && newName !== teams[currentTeam][index].name) {
+        teams[currentTeam][index].name = newName;
+        saveTeams();
+        renderPlayers();
+        renderRotationLog();
+        updateCaptainOptions();
+      }
+    }
+
+    function removePlayer(index) {
+      if (confirm(`Are you sure you want to remove ${teams[currentTeam][index].name}?`)) {
+        teams[currentTeam].splice(index, 1);
+        saveTeams();
+        renderPlayers();
+        renderRotationLog();
+        updateCaptainOptions();
+      }
+    }
+
+    if ('Notification' in window && Notification.permission !== 'granted') {
+      Notification.requestPermission();
+    }
+
+    loadTeams();
+    setInterval(() => {
+      renderPlayers();
+      // updateCaptainOptions();
+      renderRotationLog();
+    }, 1000);
+  </script>
+</body>
+</html>
