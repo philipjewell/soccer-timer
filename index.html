@@ -1,137 +1,192 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Soccer Time Tracker</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 20px;
-      background-color: #f0f0f0;
-      color: #333;
-    }
-    .player {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-      padding: 10px;
-      background-color: #fff;
-      border-radius: 5px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-    .player-info {
-      display: flex;
-      align-items: center;
-    }
-    .name {
-      font-weight: bold;
-      margin-right: 10px;
-    }
-    .green {
-      color: green;
-    }
-    .orange {
-      color: orange;
-    }
-    .red {
-      color: red;
-    }
-    .gray {
-      color: gray;
-    }
-    .alert {
-      margin-left: 10px;
-      color: red;
-      font-weight: bold;
-    }
-    table {
-      border-collapse: collapse;
-      margin-top: 10px;
-      width: 100%;
-    }
-    th, td {
-      border: 1px solid #aaa;
-      padding: 6px 10px;
-      text-align: left;
-    }
-    th {
-      background-color: #eee;
-    }
-    button {
-      margin-right: 6px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      padding: 5px 10px;
-      border-radius: 3px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-    @media (max-width: 600px) {
-      body {
-        padding: 10px;
-      }
-      .player {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      .player-info {
-        margin-bottom: 10px;
-      }
-      button {
-        padding: 4px 8px;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Soccer Time Tracker</title>
+    <style>
+body {
+  font-family: sans-serif;
+  # padding: 20px;
+  padding: 10px;
+  background-color: #f0f0f0;
+  color: #333;
+  font-size: 1em;
+}
+
+.player {
+  display: flex;
+  # flex-direction: row;
+  flex-direction: column;
+  overflow-x: auto;
+  # align-items: center;
+  align-items: flex-start;
+  padding: 10px;
+  margin-bottom: 12px;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  gap: 8px;
+  color: inherit; /* or just delete color styling */
+}
+
+
+.player-info {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 2em;
+}
+
+.name {
+  font-weight: bold;
+  margin-right: 10px;
+  word-break: break-word;
+}
+
+.green { background-color: #d4edda; }  /* light green */
+.orange { background-color: #fff3cd; } /* light orange */
+.red { background-color: #f8d7da; }    /* light red */
+.gray { background-color: #e2e3e5; }   /* light gray */
+
+.alert {
+  margin-left: 10px;
+  color: red;
+  font-weight: bold;
+}
+
+table {
+  border-collapse: collapse;
+  margin-top: 10px;
+  width: 100%;
+}
+
+th, td {
+  border: 1px solid #aaa;
+  padding: 6px 10px;
+  text-align: left;
+}
+
+th {
+  background-color: #eee;
+}
+
+button {
+  margin: 3px 3px 3px 0;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 5px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 2em;
+  flex-shrink: 0;
+
+  width: 100%;
+}
+.player button {
+  font-size: 1em;
+}
+
+
+button:hover {
+  background-color: #0056b3;
+}
+  select,
+  input[type="number"] {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 10px;
+    font-size: 2em;
+  }
+
+.quarter-selector {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  margin: 10px 0;
+}
+
+.quarter-button {
+  flex: 1;
+  padding: 8px 0;
+  font-size: 2em;
+  font-weight: 600;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #f5f5f5;
+  color: #333;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.quarter-button.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+}
+
+    </style>
 </head>
 <body>
-  <h1>Soccer Time Tracker</h1>
+<h1>Soccer Time Tracker</h1>
 
-  <label for="quarter">Quarter:</label>
-  <select id="quarter">
-    <option value="Q1">Q1</option>
-    <option value="Q2">Q2</option>
-    <option value="Q3">Q3</option>
-    <option value="Q4">Q4</option>
-    <option value="OT">OT</option>
-  </select>
+<label for="quarter">Quarter:</label>
+<div class="quarter-selector" id="quarter">
+  <button data-quarter="Q1" class="quarter-button active">Q1</button>
+  <button data-quarter="Q2" class="quarter-button">Q2</button>
+  <button data-quarter="Q3" class="quarter-button">Q3</button>
+  <button data-quarter="Q4" class="quarter-button">Q4</button>
+  <button data-quarter="OT" class="quarter-button">OT</button>
+</div>
 
-  <br><br>
+<br><br>
 
-  <label for="rotation">Rotation time (minutes):</label>
-  <input type="number" id="rotation" value="5" min="1" style="width: 50px;"> minutes
+<label for="rotation">Rotation time (minutes):</label>
+<input type="number" id="rotation" value="5" min="1" style="width: 50px;"> minutes
 
-  <br><br>
+<br><br>
 
-  <label for="team-select">Select Team:</label>
-  <select id="team-select" onchange="renderPlayers(); updateCaptainOptions();">
+<label for="team-select">Select Team:</label>
+<select id="team-select" onchange="renderPlayers(); updateCaptainOptions();">
     <option value="">None</option>
-  </select>
-  <button onclick="createTeam()">Create Team</button>
+</select>
+<button onclick="createTeam()">Create Team</button>
 
-  <br><br>
+<br><br>
 
-  <label for="captain-select">Select Team Captain:</label>
-  <select id="captain-select">
+<label for="captain-select">Select Team Captain:</label>
+<select id="captain-select">
     <option value="">None</option>
-  </select>
+</select>
 
-  <div style="margin-top: 15px;">
+<div style="margin-top: 15px;">
     <button onclick="addPlayer()">Add Player</button>
-    <button onclick="subOutAll()">Sub Out All</button>
-    <button onclick="clearAll()">Clear All</button>
-    <button onclick="clearAllTime()">Clear All Time</button> <!-- Clear All Time Button -->
-  </div>
+    <button onclick="subOutAll()">Stop Clock</button>
+    <button onclick="clearAll()">Remove Team Members</button>
+    <button onclick="clearAllTime()">Clear Time</button> <!-- Clear All Time Button -->
+</div>
 
-  <div id="players" style="margin-top: 20px;"></div>
+<div id="players" style="margin-top: 20px;"></div>
 
-  <h2 style="margin-top: 40px;">Rotation History</h2>
-  <div id="rotation-log"></div>
+<h2 style="margin-top: 40px;">Rotation History</h2>
+<div id="rotation-log"></div>
+<script>
+  document.querySelectorAll('.quarter-button').forEach(button => {
+    button.addEventListener('click', () => {
+      document.querySelectorAll('.quarter-button').forEach(btn =>
+        btn.classList.remove('active')
+      );
+      button.classList.add('active');
 
-  <script>
+      // const selectedQuarter = button.getAttribute('data-quarter');
+      // console.log('Selected quarter:', selectedQuarter);
+      // You can hook into your existing quarter logic here
+    });
+  });
+</script>
+<script>
     let teams = {};
     let currentTeam = '';
 
@@ -146,7 +201,8 @@
 
     function updateTeamOptions() {
       const teamSelect = document.getElementById('team-select');
-      teamSelect.innerHTML = '<option value="">None</option>';
+      // teamSelect.innerHTML = '<option value="">None</option>';
+      teamSelect.innerHTML = '';
       Object.keys(teams).forEach(team => {
         const option = document.createElement('option');
         option.value = team;
@@ -252,16 +308,17 @@ function addPlayer() {
         const playerName = isCaptain ? `👑 ${p.name}` : p.name;
 
         container.innerHTML += `
-          <div class="player">
+          <div class="player ${colorClass}">
             <div class="player-info">
-              <span class="name ${colorClass}">${playerName}</span> - ${totalTimeDisplay}
+              <span class="name">${playerName}</span>
+              <span>${totalTimeDisplay}</span>
             </div>
-            <div>
+            <div class="player-info">
               <button onclick="toggleField(${teams[currentTeam].indexOf(p)})">
                 ${p.onField ? 'Sub Out' : 'Sub In'}
               </button>
-              <button onclick="editPlayerName(${teams[currentTeam].indexOf(p)})">✏️</button>
-              <button onclick="removePlayer(${teams[currentTeam].indexOf(p)})">🗑️</button>
+              <button onclick="editPlayerName(${teams[currentTeam].indexOf(p)})">edit</button>
+              <button onclick="removePlayer(${teams[currentTeam].indexOf(p)})">delete</button>
               ${alert ? `<span class="alert">${alert}</span>` : ''}
             </div>
           </div>`;
@@ -318,7 +375,7 @@ function addPlayer() {
           in: new Date(player.sessionStart).toLocaleTimeString(),
           out: new Date(now).toLocaleTimeString(),
           duration: formatTime(sessionTime),
-          quarter: document.getElementById('quarter').value
+          quarter: document.querySelectorAll('.quarter-button.active')[0].innerText
         });
         player.onField = false;
         player.lastTimestamp = null;
@@ -339,7 +396,7 @@ function addPlayer() {
 
     function subOutAll() {
       const now = Date.now();
-      const quarter = document.getElementById('quarter').value;
+      const quarter = document.querySelectorAll('.quarter-button.active')[0].innerText;
 
       teams[currentTeam].forEach(player => {
         if (player.onField) {
@@ -443,6 +500,7 @@ function addPlayer() {
       // updateCaptainOptions();
       renderRotationLog();
     }, 1000);
-  </script>
+
+</script>
 </body>
 </html>
