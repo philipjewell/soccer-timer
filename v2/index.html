@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soccer Time Tracker</title>
+    <style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background-color: #f0f0f0;
+    color: #333;
+    padding-bottom: 80px; /* Space for fixed GOAL button */
+}
+
+.header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+h1 {
+    font-size: 1.5em;
+    margin-bottom: 10px;
+}
+
+.clock-display {
+    font-size: 2.5em;
+    font-weight: bold;
+    text-align: center;
+    margin: 10px 0;
+    font-family: 'Courier New', monospace;
+    background: rgba(255,255,255,0.2);
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.controls {
+    background: white;
+    padding: 15px;
+    margin: 10px;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.quarter-selector {
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+    margin: 10px 0;
+}
+
+.quarter-button {
+    flex: 1;
+    padding: 12px 0;
+    font-size: 1.2em;
+    font-weight: 600;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background-color: #f5f5f5;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.quarter-button.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: #667eea;
+    transform: scale(1.05);
+}
+
+.control-row {
+    display: flex;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.control-row label {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+}
+
+.control-row input, .control-row select {
+    flex: 2;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1em;
+}
+
+button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    flex: 1;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+.clock-controls {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.clock-controls button {
+    flex: 1;
+}
+
+.start-button {
+    background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
+}
+
+.stop-button {
+    background: linear-gradient(135deg, #f857a6 0%, #ff5858 100%);
+}
+
+.players-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px;
+    justify-content: center;
+}
+
+.player-card {
+    width: calc(33.333% - 10px);
+    min-width: 100px;
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.player-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.player-card.on-field {
+    background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+    color: #1a1a1a;
+}
+
+.player-card.warning {
+    background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+    color: #1a1a1a;
+}
+
+.player-card.alert {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+.player-card.not-played {
+    background: #e2e3e5;
+    color: #666;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+.player-name {
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-bottom: 5px;
+    word-break: break-word;
+}
+
+.player-time {
+    font-size: 1.3em;
+    font-family: 'Courier New', monospace;
+}
+
+.captain-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    font-size: 1.2em;
+}
+
+.alert-icon {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    font-size: 1.2em;
+    animation: ring 1s infinite;
+}
+
+@keyframes ring {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-10deg); }
+    75% { transform: rotate(10deg); }
+}
+
+.goal-button {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    padding: 15px 40px;
+    border-radius: 50px;
+    font-size: 1.2em;
+    box-shadow: 0 5px 20px rgba(245, 87, 108, 0.4);
+    z-index: 1000;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 2000;
+    animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    position: relative;
+    background: white;
+    margin: 20px;
+    border-radius: 15px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 15px 15px 0 0;
+    font-size: 1.3em;
+    font-weight: bold;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.player-list {
+    margin: 20px 0;
+}
+
+.player-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    margin: 5px 0;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.player-item input {
+    flex: 1;
+    margin: 0 10px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1em;
+}
+
+.player-item button {
+    padding: 8px 15px;
+    font-size: 0.9em;
+    background: linear-gradient(135deg, #f857a6 0%, #ff5858 100%);
+}
+
+.modal-footer {
+    display: flex;
+    gap: 10px;
+    padding: 20px;
+    border-top: 1px solid #eee;
+}
+
+.add-player-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.add-player-row input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1em;
+}
+
+.history-section {
+    background: white;
+    margin: 10px;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.history-section h2 {
+    margin-bottom: 15px;
+    color: #667eea;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+tr:nth-child(even) {
+    background: #f8f9fa;
+}
+
+.goal-modal select {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.2em;
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+@media (max-width: 768px) {
+    .player-card {
+        width: calc(33.333% - 7px);
+        padding: 10px;
+    }
+    
+    .player-name {
+        font-size: 0.9em;
+    }
+    
+    .player-time {
+        font-size: 1.1em;
+    }
+    
+    h1 {
+        font-size: 1.3em;
+    }
+    
+    .clock-display {
+        font-size: 2em;
+    }
+}
+
+@media (max-width: 480px) {
+    .player-card {
+        width: calc(33.333% - 5px);
+    }
+}
+
+.sound-toggle {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255,255,255,0.2);
+    padding: 5px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 id="team-title">Soccer Time Tracker</h1>
+        <div class="clock-display" id="quarter-clock">0:00</div>
+        <div class="sound-toggle" onclick="toggleSound()">
+            🔊 Sound: <span id="sound-status">ON</span>
+        </div>
+    </div>
+
+    <div class="controls">
+        <label>Select Quarter:</label>
+        <div class="quarter-selector" id="quarter">
+            <button data-quarter="Q1" class="quarter-button active">Q1</button>
+            <button data-quarter="Q2" class="quarter-button">Q2</button>
+            <button data-quarter="Q3" class="quarter-button">Q3</button>
+            <button data-quarter="Q4" class="quarter-button">Q4</button>
+            <button data-quarter="OT" class="quarter-button">OT</button>
+        </div>
+
+        <div class="clock-controls">
+            <button class="start-button" onclick="startQuarterClock()">▶ Start Clock</button>
+            <button class="stop-button" onclick="stopQuarterClock()">⏸ Stop Clock</button>
+        </div>
+
+        <div class="control-row">
+            <label for="rotation">Rotation time:</label>
+            <input type="number" id="rotation" value="5" min="1"> 
+        </div>
+
+        <div class="control-row">
+            <label for="team-select">Team:</label>
+            <select id="team-select" onchange="loadSelectedTeam()">
+                <option value="">Select Team</option>
+            </select>
+        </div>
+
+        <div class="control-row">
+            <label for="captain-select">Captain:</label>
+            <select id="captain-select" onchange="updatePlayerDisplay()">
+                <option value="">None</option>
+            </select>
+        </div>
+
+        <div class="clock-controls">
+            <button onclick="showManagePlayersModal()">👥 Manage Players</button>
+            <button onclick="createTeam()">➕ Create Team</button>
+            <button onclick="clearAllTime()">🔄 Reset Times</button>
+        </div>
+    </div>
+
+    <div class="players-grid" id="players"></div>
+
+    <div class="history-section">
+        <h2>Rotation History</h2>
+        <div id="rotation-log"></div>
+    </div>
+
+    <div class="history-section">
+        <h2>Goals</h2>
+        <div id="goals-log"></div>
+    </div>
+
+    <button class="goal-button" onclick="showGoalModal()">⚽ GOAL!</button>
+
+    <!-- Manage Players Modal -->
+    <div id="manage-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                Manage Players
+            </div>
+            <div class="modal-body">
+                <div class="add-player-row">
+                    <input type="text" id="new-player-name" placeholder="Enter player name">
+                    <button onclick="addPlayerFromModal()">➕ Add</button>
+                </div>
+                <div class="player-list" id="player-list"></div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="savePlayersFromModal()">✅ Save</button>
+                <button onclick="closeManageModal()" style="background: linear-gradient(135deg, #636e72 0%, #2d3436 100%);">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Goal Scorer Modal -->
+    <div id="goal-modal" class="modal goal-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                Who Scored?
+            </div>
+            <div class="modal-body">
+                <select id="goal-scorer">
+                    <option value="">Select Player</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button onclick="recordGoal()">✅ Record Goal</button>
+                <button onclick="closeGoalModal()" style="background: linear-gradient(135deg, #636e72 0%, #2d3436 100%);">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let teams = {};
+        let currentTeam = '';
+        let tempPlayers = [];
+        let quarterClocks = { Q1: 0, Q2: 0, Q3: 0, Q4: 0, OT: 0 };
+        let quarterTimerInterval = null;
+        let quarterStartTime = null;
+        let currentQuarter = 'Q1';
+        let goals = [];
+        let soundEnabled = true;
+        let updateInterval = null;
+
+        // Audio context for notification sound
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioContext = null;
+
+        function playDing() {
+            if (!soundEnabled) return;
+            
+            if (!audioContext) {
+                audioContext = new AudioContext();
+            }
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 880; // A5 note
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('sound-status').textContent = soundEnabled ? 'ON' : 'OFF';
+        }
+
+        // Initialize quarter buttons
+        document.querySelectorAll('.quarter-button').forEach(button => {
+            button.addEventListener('click', () => {
+                // Save current quarter's time
+                if (quarterTimerInterval) {
+                    stopQuarterClock();
+                }
+                
+                document.querySelectorAll('.quarter-button').forEach(btn =>
+                    btn.classList.remove('active')
+                );
+                button.classList.add('active');
+                
+                currentQuarter = button.getAttribute('data-quarter');
+                updateQuarterClock();
+            });
+        });
+
+        function startQuarterClock() {
+            if (quarterTimerInterval) return;
+            
+            quarterStartTime = Date.now() - (quarterClocks[currentQuarter] * 1000);
+            quarterTimerInterval = setInterval(updateQuarterClock, 100);
+            
+            // Also start player timers for those on field
+            const now = Date.now();
+            teams[currentTeam]?.forEach(player => {
+                if (player.onField && !player.sessionStart) {
+                    player.sessionStart = now;
+                    player.lastTimestamp = now;
+                }
+            });
+        }
+
+        function stopQuarterClock() {
+            if (quarterTimerInterval) {
+                clearInterval(quarterTimerInterval);
+                quarterTimerInterval = null;
+                
+                if (quarterStartTime) {
+                    quarterClocks[currentQuarter] = Math.floor((Date.now() - quarterStartTime) / 1000);
+                }
+            }
+            
+            // Also pause all player timers
+            const now = Date.now();
+            teams[currentTeam]?.forEach(player => {
+                if (player.onField) {
+                    const sessionTime = Math.floor((now - player.sessionStart) / 1000);
+                    player.totalTime += sessionTime;
+                    player.sessionStart = null;
+                    player.lastTimestamp = null;
+                }
+            });
+            
+            updatePlayerDisplay();
+        }
+
+        function updateQuarterClock() {
+            let seconds;
+            if (quarterTimerInterval && quarterStartTime) {
+                seconds = Math.floor((Date.now() - quarterStartTime) / 1000);
+                quarterClocks[currentQuarter] = seconds;
+            } else {
+                seconds = quarterClocks[currentQuarter];
+            }
+            
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            document.getElementById('quarter-clock').textContent = 
+                `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function createTeam() {
+            const teamName = prompt("Enter team name:");
+            if (!teamName) return;
+
+            teams[teamName] = [];
+            updateTeamOptions();
+            saveTeams();
+        }
+
+        function updateTeamOptions() {
+            const teamSelect = document.getElementById('team-select');
+            teamSelect.innerHTML = '<option value="">Select Team</option>';
+            Object.keys(teams).forEach(team => {
+                const option = document.createElement('option');
+                option.value = team;
+                option.textContent = team;
+                teamSelect.appendChild(option);
+            });
+        }
+
+        function loadSelectedTeam() {
+            currentTeam = document.getElementById('team-select').value;
+            const header = document.getElementById('team-title');
+            header.textContent = currentTeam ? `${currentTeam} Time Tracker` : 'Soccer Time Tracker';
+            
+            if (currentTeam) {
+                renderPlayerCards();
+                updateCaptainOptions();
+                renderRotationLog();
+                renderGoalsLog();
+                startUpdateInterval();
+            } else {
+                document.getElementById('players').innerHTML = '';
+                stopUpdateInterval();
+            }
+        }
+
+        function renderPlayerCards() {
+            if (!currentTeam) return;
+            
+            const container = document.getElementById('players');
+            container.innerHTML = '';
+            
+            teams[currentTeam].forEach((player, index) => {
+                const card = document.createElement('div');
+                card.className = 'player-card';
+                card.id = `player-${index}`;
+                card.onclick = () => toggleField(index);
+                
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'player-name';
+                nameDiv.textContent = player.name;
+                
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'player-time';
+                timeDiv.id = `time-${index}`;
+                
+                card.appendChild(nameDiv);
+                card.appendChild(timeDiv);
+                container.appendChild(card);
+            });
+            
+            updatePlayerDisplay();
+        }
+
+        function updatePlayerDisplay() {
+            if (!currentTeam) return;
+            
+            const now = Date.now();
+            const rotationMinutes = parseInt(document.getElementById('rotation').value) || 5;
+            const rotationSeconds = rotationMinutes * 60;
+            const captain = document.getElementById('captain-select').value;
+            
+            teams[currentTeam].forEach((player, index) => {
+                const card = document.getElementById(`player-${index}`);
+                const timeDiv = document.getElementById(`time-${index}`);
+                
+                if (!card || !timeDiv) return;
+                
+                let displayTime = player.totalTime;
+                let sessionTime = 0;
+                
+                if (player.onField && player.sessionStart) {
+                    sessionTime = Math.floor((now - player.sessionStart) / 1000);
+                    displayTime += sessionTime;
+                }
+                
+                // Update time display
+                timeDiv.textContent = formatTime(displayTime);
+                
+                // Clear all state classes
+                card.className = 'player-card';
+                card.innerHTML = '';
+                
+                // Add player name
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'player-name';
+                nameDiv.textContent = player.name;
+                card.appendChild(nameDiv);
+                
+                // Add time
+                const newTimeDiv = document.createElement('div');
+                newTimeDiv.className = 'player-time';
+                newTimeDiv.id = `time-${index}`;
+                newTimeDiv.textContent = formatTime(displayTime);
+                card.appendChild(newTimeDiv);
+                
+                // Add captain badge if applicable
+                if (captain === player.name) {
+                    const badge = document.createElement('span');
+                    badge.className = 'captain-badge';
+                    badge.textContent = '👑';
+                    card.appendChild(badge);
+                }
+                
+                // Set color based on status
+                if (player.onField) {
+                    if (sessionTime >= rotationSeconds) {
+                        card.classList.add('alert');
+                        const alertIcon = document.createElement('span');
+                        alertIcon.className = 'alert-icon';
+                        alertIcon.textContent = '🔔';
+                        card.appendChild(alertIcon);
+                        
+                        if (!player.notified) {
+                            player.notified = true;
+                            playDing();
+                            if (Notification.permission === 'granted') {
+                                new Notification(`${player.name} has exceeded rotation time!`);
+                            }
+                        }
+                    } else if (sessionTime >= rotationSeconds * 0.8) {
+                        card.classList.add('warning');
+                    } else {
+                        card.classList.add('on-field');
+                    }
+                } else if (displayTime === 0) {
+                    card.classList.add('not-played');
+                }
+            });
+        }
+
+        function toggleField(index) {
+            const player = teams[currentTeam][index];
+            const now = Date.now();
+            
+            if (player.onField) {
+                // Sub out
+                if (player.sessionStart) {
+                    const sessionTime = Math.floor((now - player.sessionStart) / 1000);
+                    player.totalTime += sessionTime;
+                    player.rotationLog.push({
+                        in: new Date(player.sessionStart).toLocaleTimeString(),
+                        out: new Date(now).toLocaleTimeString(),
+                        duration: formatTime(sessionTime),
+                        quarter: currentQuarter
+                    });
+                }
+                player.onField = false;
+                player.sessionStart = null;
+                player.lastTimestamp = null;
+                player.notified = false;
+            } else {
+                // Sub in (only if clock is running)
+                if (quarterTimerInterval) {
+                    player.onField = true;
+                    player.sessionStart = now;
+                    player.lastTimestamp = now;
+                    player.notified = false;
+                    player.hasPlayed = true;
+                } else {
+                    // Just mark as on field, will start timing when clock starts
+                    player.onField = true;
+                    player.notified = false;
+                    player.hasPlayed = true;
+                }
+            }
+            
+            saveTeams();
+            updatePlayerDisplay();
+            renderRotationLog();
+        }
+
+        function showManagePlayersModal() {
+            if (!currentTeam) {
+                alert("Please select a team first.");
+                return;
+            }
+            
+            tempPlayers = JSON.parse(JSON.stringify(teams[currentTeam]));
+            renderPlayerList();
+            document.getElementById('manage-modal').style.display = 'block';
+        }
+
+        function renderPlayerList() {
+            const list = document.getElementById('player-list');
+            list.innerHTML = '';
+            
+            tempPlayers.forEach((player, index) => {
+                const item = document.createElement('div');
+                item.className = 'player-item';
+                item.innerHTML = `
+                    <span>${index + 1}.</span>
+                    <input type="text" value="${player.name}" onchange="updateTempPlayer(${index}, this.value)">
+                    <button onclick="removeTempPlayer(${index})">❌ Remove</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function addPlayerFromModal() {
+            const name = document.getElementById('new-player-name').value;
+            if (!name) return;
+            
+            tempPlayers.push({
+                name,
+                totalTime: 0,
+                onField: false,
+                lastTimestamp: null,
+                sessionStart: null,
+                rotationLog: [],
+                notified: false,
+                hasPlayed: false
+            });
+            
+            document.getElementById('new-player-name').value = '';
+            renderPlayerList();
+        }
+
+        function updateTempPlayer(index, name) {
+            tempPlayers[index].name = name;
+        }
+
+        function removeTempPlayer(index) {
+            tempPlayers.splice(index, 1);
+            renderPlayerList();
+        }
+
+        function savePlayersFromModal() {
+            teams[currentTeam] = tempPlayers;
+            saveTeams();
+            closeManageModal();
+            renderPlayerCards();
+            updateCaptainOptions();
+            renderRotationLog();
+        }
+
+        function closeManageModal() {
+            document.getElementById('manage-modal').style.display = 'none';
+        }
+
+        function showGoalModal() {
+            if (!currentTeam) {
+                alert("Please select a team first.");
+                return;
+            }
+            
+            const select = document.getElementById('goal-scorer');
+            select.innerHTML = '<option value="">Select Player</option>';
+            
+            teams[currentTeam].forEach(player => {
+                const option = document.createElement('option');
+                option.value = player.name;
+                option.textContent = player.name;
+                select.appendChild(option);
+            });
+            
+            const otherOption = document.createElement('option');
+            otherOption.value = "Other Team";
+            otherOption.textContent = "Other Team";
+            select.appendChild(otherOption);
+            
+            document.getElementById('goal-modal').style.display = 'block';
+        }
+
+        function recordGoal() {
+            const scorer = document.getElementById('goal-scorer').value;
+            if (!scorer) return;
+            
+            goals.push({
+                scorer,
+                time: new Date().toLocaleTimeString(),
+                quarter: currentQuarter,
+                team: currentTeam,
+                quarterTime: formatTime(quarterClocks[currentQuarter])
+            });
+            
+            saveGoals();
+            closeGoalModal();
+            renderGoalsLog();
+            playDing();
+        }
+
+        function closeGoalModal() {
+            document.getElementById('goal-modal').style.display = 'none';
+        }
+
+        function renderGoalsLog() {
+            const container = document.getElementById('goals-log');
+            const teamGoals = goals.filter(g => g.team === currentTeam);
+            
+            if (teamGoals.length === 0) {
+                container.innerHTML = '<p>No goals scored yet.</p>';
+                return;
+            }
+            
+            container.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Scorer</th>
+                            <th>Time</th>
+                            <th>Quarter</th>
+                            <th>Game Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${teamGoals.map(goal => `
+                            <tr>
+                                <td>${goal.scorer}</td>
+                                <td>${goal.time}</td>
+                                <td>${goal.quarter}</td>
+                                <td>${goal.quarterTime}</td>
+                            </tr>`).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function renderRotationLog() {
+            const logContainer = document.getElementById('rotation-log');
+            const logs = [];
+
+            if (!currentTeam) return;
+            
+            teams[currentTeam].forEach(p => {
+                p.rotationLog.forEach(entry => {
+                    logs.push({ name: p.name, ...entry });
+                });
+            });
+
+            logs.sort((a, b) => new Date(b.out) - new Date(a.out));
+
+            if (logs.length === 0) {
+                logContainer.innerHTML = '<p>No rotations yet.</p>';
+                return;
+            }
+
+            logContainer.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Player</th>
+                            <th>Subbed In</th>
+                            <th>Subbed Out</th>
+                            <th>Duration</th>
+                            <th>Quarter</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${logs.map(log => `
+                            <tr>
+                                <td>${log.name}</td>
+                                <td>${log.in}</td>
+                                <td>${log.out}</td>
+                                <td>${log.duration}</td>
+                                <td>${log.quarter || ''}</td>
+                            </tr>`).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function updateCaptainOptions() {
+            const captainSelect = document.getElementById('captain-select');
+            captainSelect.innerHTML = '<option value="">None</option>';
+            
+            if (!currentTeam) return;
+            
+            teams[currentTeam].forEach(player => {
+                const option = document.createElement('option');
+                option.value = player.name;
+                option.textContent = player.name;
+                captainSelect.appendChild(option);
+            });
+        }
+
+        function clearAllTime() {
+            if (!currentTeam) {
+                alert("Please select a team first.");
+                return;
+            }
+            
+            if (confirm("Reset all player times and rotation history?")) {
+                teams[currentTeam].forEach(p => {
+                    p.totalTime = 0;
+                    p.sessionStart = null;
+                    p.lastTimestamp = null;
+                    p.rotationLog = [];
+                    p.onField = false;
+                    p.notified = false;
+                    p.hasPlayed = false;
+                });
+                saveTeams();
+                updatePlayerDisplay();
+                renderRotationLog();
+            }
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function saveTeams() {
+            localStorage.setItem('soccerTeams', JSON.stringify(teams));
+        }
+
+        function loadTeams() {
+            const data = localStorage.getItem('soccerTeams');
+            if (data) {
+                teams = JSON.parse(data);
+            }
+            updateTeamOptions();
+        }
+
+        function saveGoals() {
+            localStorage.setItem('soccerGoals', JSON.stringify(goals));
+        }
+
+        function loadGoals() {
+            const data = localStorage.getItem('soccerGoals');
+            if (data) {
+                goals = JSON.parse(data);
+            }
+        }
+
+        function startUpdateInterval() {
+            stopUpdateInterval();
+            updateInterval = setInterval(() => {
+                updatePlayerDisplay();
+            }, 1000);
+        }
+
+        function stopUpdateInterval() {
+            if (updateInterval) {
+                clearInterval(updateInterval);
+                updateInterval = null;
+            }
+        }
+
+        // Request notification permission
+        if ('Notification' in window && Notification.permission !== 'granted') {
+            Notification.requestPermission();
+        }
+
+        // Initialize
+        loadTeams();
+        loadGoals();
+        updateQuarterClock();
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target.className === 'modal') {
+                event.target.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
