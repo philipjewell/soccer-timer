@@ -566,7 +566,7 @@ tr:nth-child(even) {
         <h1 id="team-title">Soccer Time Tracker</h1>
         <div class="clock-display" id="quarter-clock">0:00</div>
         <div class="sound-toggle" onclick="toggleSound()">
-            🔊 Sound: <span id="sound-status">ON</span>
+            <span id="sound-status">🔊</span>
         </div>
     </div>
 
@@ -758,6 +758,7 @@ tr:nth-child(even) {
             <h3>🔗 Share Team Data</h3>
             <p>Share this link with others to give them access to your team's current data (players, goals, rotation history):</p>
             <div class="share-url" id="share-url"></div>
+            <p><b>RECOMMENDATION</b>: these links tend to be long and might require a URL shortner like <a href="https://tinyurl.com/">tinyurl.com</a> to make a short enough link to share through text messaging.</p>
             <div class="modal-footer">
                 <button class="copy-button" onclick="copyShareUrl()">📋 Copy Link</button>
                 <button onclick="closeShareModal()" style="background: linear-gradient(135deg, #636e72 0%, #2d3436 100%);">Close</button>
@@ -808,7 +809,7 @@ tr:nth-child(even) {
 
         function toggleSound() {
             soundEnabled = !soundEnabled;
-            document.getElementById('sound-status').textContent = soundEnabled ? 'ON' : 'OFF';
+            document.getElementById('sound-status').textContent = soundEnabled ? '🔊' : '🔇';
         }
 
         // Initialize quarter buttons
