@@ -140,6 +140,10 @@ button:active {
     background: linear-gradient(135deg, #f857a6 0%, #ff5858 100%);
 }
 
+.share-button {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
 .players-grid {
     display: flex;
     flex-wrap: wrap;
@@ -227,18 +231,53 @@ button:active {
     75% { transform: rotate(10deg); }
 }
 
-.goal-button {
+.goal-section {
     position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 2px solid #667eea;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
+.score-display {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.team-score {
+    padding: 5px 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 20px;
+}
+
+.other-score {
+    padding: 5px 15px;
+    background: linear-gradient(135deg, #636e72 0%, #2d3436 100%);
+    color: white;
+    border-radius: 20px;
+}
+
+.goal-button {
     background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
     color: white;
     padding: 15px 40px;
     border-radius: 50px;
     font-size: 1.2em;
     box-shadow: 0 5px 20px rgba(245, 87, 108, 0.4);
-    z-index: 1000;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
 .modal {
@@ -378,6 +417,62 @@ tr:nth-child(even) {
     margin: 20px 0;
 }
 
+.goals-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.goal-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    margin: 5px 0;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.goal-info {
+    flex: 1;
+}
+
+.goal-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.goal-actions button {
+    padding: 5px 10px;
+    font-size: 0.9em;
+}
+
+.edit-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.delete-button {
+    background: linear-gradient(135deg, #f857a6 0%, #ff5858 100%);
+}
+
+.warning-modal {
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+    padding: 20px;
+    border-radius: 10px;
+    margin: 20px auto;
+    max-width: 500px;
+    text-align: center;
+}
+
+.warning-modal h3 {
+    color: #856404;
+    margin-bottom: 15px;
+}
+
+.warning-modal .modal-footer {
+    justify-content: center;
+}
+
 @media (max-width: 768px) {
     .player-card {
         width: calc(33.333% - 7px);
@@ -416,6 +511,53 @@ tr:nth-child(even) {
     border-radius: 20px;
     cursor: pointer;
     font-size: 0.9em;
+}
+
+.import-modal {
+    background: #d4edda;
+    border: 2px solid #28a745;
+    padding: 20px;
+    border-radius: 10px;
+    margin: 20px auto;
+    max-width: 500px;
+    text-align: center;
+}
+
+.import-modal h3 {
+    color: #155724;
+    margin-bottom: 15px;
+}
+
+.share-modal {
+    background: #d1ecf1;
+    border: 2px solid #17a2b8;
+    padding: 20px;
+    border-radius: 10px;
+    margin: 20px auto;
+    max-width: 600px;
+    text-align: left;
+}
+
+.share-modal h3 {
+    color: #0c5460;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.share-url {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 10px;
+    margin: 10px 0;
+    font-family: monospace;
+    word-break: break-all;
+    font-size: 0.9em;
+}
+
+.copy-button {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    margin-top: 10px;
 }
     </style>
 </head>
@@ -465,7 +607,12 @@ tr:nth-child(even) {
         <div class="clock-controls">
             <button onclick="showManagePlayersModal()">👥 Manage Players</button>
             <button onclick="createTeam()">➕ Create Team</button>
-            <button onclick="clearAllTime()">🔄 Reset Times</button>
+        </div>
+        
+        <div class="clock-controls">
+            <button onclick="showResetWarning()">🔄 Reset Times</button>
+            <button onclick="showManageGoalsModal()">⚽ Manage Goals</button>
+            <button class="share-button" onclick="shareTeamData()">🔗 Share Team</button>
         </div>
     </div>
 
@@ -481,7 +628,15 @@ tr:nth-child(even) {
         <div id="goals-log"></div>
     </div>
 
-    <button class="goal-button" onclick="showGoalModal()">⚽ GOAL!</button>
+    <div class="goal-section">
+        <div class="score-display">
+            <span class="team-score" id="team-score">Team: 0</span>
+        </div>
+        <button class="goal-button" onclick="showGoalModal()">⚽ GOAL!</button>
+        <div class="score-display">
+            <span class="other-score" id="other-score">Other: 0</span>
+        </div>
+    </div>
 
     <!-- Manage Players Modal -->
     <div id="manage-modal" class="modal">
@@ -513,6 +668,14 @@ tr:nth-child(even) {
                 <select id="goal-scorer">
                     <option value="">Select Player</option>
                 </select>
+                <div style="margin-top: 20px;">
+                    <label>
+                        <input type="radio" name="goal-team" value="team" checked> Our Team
+                    </label>
+                    <label style="margin-left: 20px;">
+                        <input type="radio" name="goal-team" value="other"> Other Team
+                    </label>
+                </div>
             </div>
             <div class="modal-footer">
                 <button onclick="recordGoal()">✅ Record Goal</button>
@@ -521,17 +684,100 @@ tr:nth-child(even) {
         </div>
     </div>
 
+    <!-- Manage Goals Modal -->
+    <div id="manage-goals-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                Manage Goals
+            </div>
+            <div class="modal-body">
+                <div class="goals-list" id="goals-list"></div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeManageGoalsModal()" style="background: linear-gradient(135deg, #636e72 0%, #2d3436 100%);">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Goal Modal -->
+    <div id="edit-goal-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                Edit Goal
+            </div>
+            <div class="modal-body">
+                <select id="edit-goal-scorer">
+                    <option value="">Select Player</option>
+                </select>
+                <div style="margin-top: 20px;">
+                    <label>
+                        <input type="radio" name="edit-goal-team" value="team" id="edit-team-radio"> Our Team
+                    </label>
+                    <label style="margin-left: 20px;">
+                        <input type="radio" name="edit-goal-team" value="other" id="edit-other-radio"> Other Team
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="saveEditedGoal()">✅ Save</button>
+                <button onclick="closeEditGoalModal()" style="background: linear-gradient(135deg, #636e72 0%, #2d3436 100%);">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Warning Modal -->
+    <div id="reset-warning-modal" class="modal">
+        <div class="modal-content warning-modal">
+            <h3>⚠️ Warning!</h3>
+            <p>Resetting will clear out the rotation history as well as the goals history.</p>
+            <p>Are you sure you want to do this?</p>
+            <div class="modal-footer">
+                <button onclick="confirmReset()" style="background: linear-gradient(135deg, #f857a6 0%, #ff5858 100%);">Yes, Reset Everything</button>
+                <button onclick="closeResetWarning()" style="background: linear-gradient(135deg, #636e72 0%, #2d3436 100%);">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Data Modal -->
+    <div id="import-modal" class="modal">
+        <div class="modal-content import-modal">
+            <h3>📥 Import Team Data</h3>
+            <p>You're about to import team data that was shared with you.</p>
+            <p>This will overwrite your current data for this team.</p>
+            <p>Do you want to continue?</p>
+            <div class="modal-footer">
+                <button onclick="confirmImport()">Yes, Import</button>
+                <button onclick="cancelImport()" style="background: linear-gradient(135deg, #636e72 0%, #2d3436 100%);">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div id="share-modal" class="modal">
+        <div class="modal-content share-modal">
+            <h3>🔗 Share Team Data</h3>
+            <p>Share this link with others to give them access to your team's current data (players, goals, rotation history):</p>
+            <div class="share-url" id="share-url"></div>
+            <div class="modal-footer">
+                <button class="copy-button" onclick="copyShareUrl()">📋 Copy Link</button>
+                <button onclick="closeShareModal()" style="background: linear-gradient(135deg, #636e72 0%, #2d3436 100%);">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let teams = {};
         let currentTeam = '';
         let tempPlayers = [];
-        let quarterClocks = { Q1: 0, Q2: 0, Q3: 0, Q4: 0, OT: 0 };
+        let teamQuarterClocks = {}; // Now per team
         let quarterTimerInterval = null;
         let quarterStartTime = null;
         let currentQuarter = 'Q1';
         let goals = [];
         let soundEnabled = true;
         let updateInterval = null;
+        let editingGoalIndex = -1;
+        let pendingImportData = null;
 
         // Audio context for notification sound
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -584,9 +830,10 @@ tr:nth-child(even) {
         });
 
         function startQuarterClock() {
-            if (quarterTimerInterval) return;
+            if (quarterTimerInterval || !currentTeam) return;
             
-            quarterStartTime = Date.now() - (quarterClocks[currentQuarter] * 1000);
+            const currentClocks = getCurrentQuarterClocks();
+            quarterStartTime = Date.now() - (currentClocks[currentQuarter] * 1000);
             quarterTimerInterval = setInterval(updateQuarterClock, 100);
             
             // Also start player timers for those on field
@@ -604,38 +851,74 @@ tr:nth-child(even) {
                 clearInterval(quarterTimerInterval);
                 quarterTimerInterval = null;
                 
-                if (quarterStartTime) {
-                    quarterClocks[currentQuarter] = Math.floor((Date.now() - quarterStartTime) / 1000);
+                if (quarterStartTime && currentTeam) {
+                    const currentClocks = getCurrentQuarterClocks();
+                    currentClocks[currentQuarter] = Math.floor((Date.now() - quarterStartTime) / 1000);
+                    saveTeamQuarterClocks();
                 }
             }
             
-            // Also pause all player timers
+            // Log all player times for those on field
             const now = Date.now();
             teams[currentTeam]?.forEach(player => {
-                if (player.onField) {
+                if (player.onField && player.sessionStart) {
                     const sessionTime = Math.floor((now - player.sessionStart) / 1000);
                     player.totalTime += sessionTime;
+                    
+                    // Add to rotation log
+                    player.rotationLog.push({
+                        in: new Date(player.sessionStart).toLocaleTimeString(),
+                        out: new Date(now).toLocaleTimeString(),
+                        duration: formatTime(sessionTime),
+                        quarter: currentQuarter
+                    });
+                    
+                    // Reset session tracking but keep on field
                     player.sessionStart = null;
                     player.lastTimestamp = null;
                 }
             });
             
+            saveTeams();
             updatePlayerDisplay();
+            renderRotationLog();
         }
 
         function updateQuarterClock() {
             let seconds;
-            if (quarterTimerInterval && quarterStartTime) {
+            if (quarterTimerInterval && quarterStartTime && currentTeam) {
                 seconds = Math.floor((Date.now() - quarterStartTime) / 1000);
-                quarterClocks[currentQuarter] = seconds;
+                const currentClocks = getCurrentQuarterClocks();
+                currentClocks[currentQuarter] = seconds;
             } else {
-                seconds = quarterClocks[currentQuarter];
+                const currentClocks = getCurrentQuarterClocks();
+                seconds = currentClocks[currentQuarter];
             }
             
             const mins = Math.floor(seconds / 60);
             const secs = seconds % 60;
             document.getElementById('quarter-clock').textContent = 
                 `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function getCurrentQuarterClocks() {
+            if (!currentTeam) return { Q1: 0, Q2: 0, Q3: 0, Q4: 0, OT: 0 };
+            
+            if (!teamQuarterClocks[currentTeam]) {
+                teamQuarterClocks[currentTeam] = { Q1: 0, Q2: 0, Q3: 0, Q4: 0, OT: 0 };
+            }
+            return teamQuarterClocks[currentTeam];
+        }
+
+        function saveTeamQuarterClocks() {
+            localStorage.setItem('teamQuarterClocks', JSON.stringify(teamQuarterClocks));
+        }
+
+        function loadTeamQuarterClocks() {
+            const saved = localStorage.getItem('teamQuarterClocks');
+            if (saved) {
+                teamQuarterClocks = JSON.parse(saved);
+            }
         }
 
         function createTeam() {
@@ -649,11 +932,15 @@ tr:nth-child(even) {
 
         function updateTeamOptions() {
             const teamSelect = document.getElementById('team-select');
+            const currentValue = teamSelect.value;
             teamSelect.innerHTML = '<option value="">Select Team</option>';
             Object.keys(teams).forEach(team => {
                 const option = document.createElement('option');
                 option.value = team;
                 option.textContent = team;
+                if (team === currentValue) {
+                    option.selected = true;
+                }
                 teamSelect.appendChild(option);
             });
         }
@@ -663,14 +950,20 @@ tr:nth-child(even) {
             const header = document.getElementById('team-title');
             header.textContent = currentTeam ? `${currentTeam} Time Tracker` : 'Soccer Time Tracker';
             
+            // Save selected team to localStorage
             if (currentTeam) {
+                localStorage.setItem('selectedTeam', currentTeam);
                 renderPlayerCards();
                 updateCaptainOptions();
                 renderRotationLog();
                 renderGoalsLog();
+                updateScoreDisplay();
+                updateQuarterClock(); // Update clock display for new team
                 startUpdateInterval();
             } else {
+                localStorage.removeItem('selectedTeam');
                 document.getElementById('players').innerHTML = '';
+                document.getElementById('quarter-clock').textContent = '0:00';
                 stopUpdateInterval();
             }
         }
@@ -725,95 +1018,81 @@ tr:nth-child(even) {
                     displayTime += sessionTime;
                 }
                 
-                // Update time display
                 timeDiv.textContent = formatTime(displayTime);
                 
-                // Clear all state classes
+                // Reset classes
                 card.className = 'player-card';
-                card.innerHTML = '';
                 
-                // Add player name
-                const nameDiv = document.createElement('div');
-                nameDiv.className = 'player-name';
-                nameDiv.textContent = player.name;
-                card.appendChild(nameDiv);
-                
-                // Add time
-                const newTimeDiv = document.createElement('div');
-                newTimeDiv.className = 'player-time';
-                newTimeDiv.id = `time-${index}`;
-                newTimeDiv.textContent = formatTime(displayTime);
-                card.appendChild(newTimeDiv);
-                
-                // Add captain badge if applicable
-                if (captain === player.name) {
-                    const badge = document.createElement('span');
-                    badge.className = 'captain-badge';
-                    badge.textContent = '👑';
-                    card.appendChild(badge);
-                }
-                
-                // Set color based on status
+                // Add appropriate class based on state
                 if (player.onField) {
+                    card.classList.add('on-field');
+                    
+                    // Warning and alert states for on-field players
+                    if (sessionTime >= rotationSeconds * 0.8) {
+                        card.classList.add('warning');
+                    }
                     if (sessionTime >= rotationSeconds) {
                         card.classList.add('alert');
-                        const alertIcon = document.createElement('span');
-                        alertIcon.className = 'alert-icon';
-                        alertIcon.textContent = '🔔';
-                        card.appendChild(alertIcon);
-                        
-                        if (!player.notified) {
-                            player.notified = true;
-                            playDing();
-                            if (Notification.permission === 'granted') {
-                                new Notification(`${player.name} has exceeded rotation time!`);
-                            }
+                        if (!card.querySelector('.alert-icon')) {
+                            const alertIcon = document.createElement('div');
+                            alertIcon.className = 'alert-icon';
+                            alertIcon.textContent = '🔔';
+                            card.appendChild(alertIcon);
                         }
-                    } else if (sessionTime >= rotationSeconds * 0.8) {
-                        card.classList.add('warning');
-                    } else {
-                        card.classList.add('on-field');
+                        playDing();
                     }
                 } else if (displayTime === 0) {
                     card.classList.add('not-played');
                 }
+                
+                // Captain badge
+                const existingBadge = card.querySelector('.captain-badge');
+                if (existingBadge) existingBadge.remove();
+                
+                if (captain === player.name) {
+                    const badge = document.createElement('div');
+                    badge.className = 'captain-badge';
+                    badge.textContent = '👑';
+                    card.appendChild(badge);
+                }
             });
         }
 
-        function toggleField(index) {
-            const player = teams[currentTeam][index];
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function toggleField(playerIndex) {
+            if (!currentTeam) return;
+            
+            const player = teams[currentTeam][playerIndex];
             const now = Date.now();
             
             if (player.onField) {
-                // Sub out
+                // Player coming off field
                 if (player.sessionStart) {
                     const sessionTime = Math.floor((now - player.sessionStart) / 1000);
                     player.totalTime += sessionTime;
+                    
+                    // Add to rotation log
                     player.rotationLog.push({
                         in: new Date(player.sessionStart).toLocaleTimeString(),
                         out: new Date(now).toLocaleTimeString(),
                         duration: formatTime(sessionTime),
                         quarter: currentQuarter
                     });
+                    
+                    player.sessionStart = null;
+                    player.lastTimestamp = null;
                 }
                 player.onField = false;
-                player.sessionStart = null;
-                player.lastTimestamp = null;
-                player.notified = false;
             } else {
-                // Sub in (only if clock is running)
-                if (quarterTimerInterval) {
-                    player.onField = true;
-                    player.sessionStart = now;
-                    player.lastTimestamp = now;
-                    player.notified = false;
-                    player.hasPlayed = true;
-                } else {
-                    // Just mark as on field, will start timing when clock starts
-                    player.onField = true;
-                    player.notified = false;
-                    player.hasPlayed = true;
-                }
+                // Player going on field
+                player.onField = true;
+                player.sessionStart = now;
+                player.lastTimestamp = now;
             }
             
             saveTeams();
@@ -821,68 +1100,99 @@ tr:nth-child(even) {
             renderRotationLog();
         }
 
+        function startUpdateInterval() {
+            if (updateInterval) return;
+            updateInterval = setInterval(updatePlayerDisplay, 1000);
+        }
+
+        function stopUpdateInterval() {
+            if (updateInterval) {
+                clearInterval(updateInterval);
+                updateInterval = null;
+            }
+        }
+
+        function updateCaptainOptions() {
+            if (!currentTeam) return;
+            
+            const select = document.getElementById('captain-select');
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">None</option>';
+            
+            teams[currentTeam].forEach(player => {
+                const option = document.createElement('option');
+                option.value = player.name;
+                option.textContent = player.name;
+                if (player.name === currentValue) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        }
+
         function showManagePlayersModal() {
             if (!currentTeam) {
-                alert("Please select a team first.");
+                alert('Please select a team first');
                 return;
             }
             
             tempPlayers = JSON.parse(JSON.stringify(teams[currentTeam]));
-            renderPlayerList();
+            renderTempPlayers();
             document.getElementById('manage-modal').style.display = 'block';
         }
 
-        function renderPlayerList() {
-            const list = document.getElementById('player-list');
-            list.innerHTML = '';
+        function renderTempPlayers() {
+            const container = document.getElementById('player-list');
+            container.innerHTML = '';
             
             tempPlayers.forEach((player, index) => {
                 const item = document.createElement('div');
                 item.className = 'player-item';
-                item.innerHTML = `
-                    <span>${index + 1}.</span>
-                    <input type="text" value="${player.name}" onchange="updateTempPlayer(${index}, this.value)">
-                    <button onclick="removeTempPlayer(${index})">❌ Remove</button>
-                `;
-                list.appendChild(item);
+                
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = player.name;
+                input.onchange = (e) => tempPlayers[index].name = e.target.value;
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = '🗑 Delete';
+                deleteBtn.onclick = () => {
+                    tempPlayers.splice(index, 1);
+                    renderTempPlayers();
+                };
+                
+                item.appendChild(input);
+                item.appendChild(deleteBtn);
+                container.appendChild(item);
             });
         }
 
         function addPlayerFromModal() {
-            const name = document.getElementById('new-player-name').value;
+            const name = document.getElementById('new-player-name').value.trim();
             if (!name) return;
             
             tempPlayers.push({
-                name,
+                name: name,
                 totalTime: 0,
                 onField: false,
-                lastTimestamp: null,
                 sessionStart: null,
-                rotationLog: [],
-                notified: false,
-                hasPlayed: false
+                lastTimestamp: null,
+                rotationLog: []
             });
             
             document.getElementById('new-player-name').value = '';
-            renderPlayerList();
-        }
-
-        function updateTempPlayer(index, name) {
-            tempPlayers[index].name = name;
-        }
-
-        function removeTempPlayer(index) {
-            tempPlayers.splice(index, 1);
-            renderPlayerList();
+            renderTempPlayers();
         }
 
         function savePlayersFromModal() {
+            // Filter out empty names
+            tempPlayers = tempPlayers.filter(player => player.name.trim() !== '');
             teams[currentTeam] = tempPlayers;
+            
             saveTeams();
-            closeManageModal();
             renderPlayerCards();
             updateCaptainOptions();
-            renderRotationLog();
+            closeManageModal();
         }
 
         function closeManageModal() {
@@ -891,7 +1201,7 @@ tr:nth-child(even) {
 
         function showGoalModal() {
             if (!currentTeam) {
-                alert("Please select a team first.");
+                alert('Please select a team first');
                 return;
             }
             
@@ -905,152 +1215,458 @@ tr:nth-child(even) {
                 select.appendChild(option);
             });
             
-            const otherOption = document.createElement('option');
-            otherOption.value = "Other Team";
-            otherOption.textContent = "Other Team";
-            select.appendChild(otherOption);
+            // Reset radio buttons and show/hide player selection
+            document.querySelector('input[name="goal-team"][value="team"]').checked = true;
+            updateGoalScorerVisibility();
             
             document.getElementById('goal-modal').style.display = 'block';
         }
 
-        function recordGoal() {
-            const scorer = document.getElementById('goal-scorer').value;
-            if (!scorer) return;
+        function updateGoalScorerVisibility() {
+            const goalTeam = document.querySelector('input[name="goal-team"]:checked').value;
+            const scorerSelect = document.getElementById('goal-scorer');
+            const scorerContainer = scorerSelect.parentElement;
             
-            goals.push({
-                scorer,
-                time: new Date().toLocaleTimeString(),
-                quarter: currentQuarter,
-                team: currentTeam,
-                quarterTime: formatTime(quarterClocks[currentQuarter])
-            });
-            
-            saveGoals();
-            closeGoalModal();
-            renderGoalsLog();
-            playDing();
+            if (goalTeam === 'other') {
+                scorerContainer.style.display = 'none';
+                scorerSelect.value = ''; // Clear selection
+            } else {
+                scorerContainer.style.display = 'block';
+            }
         }
 
         function closeGoalModal() {
             document.getElementById('goal-modal').style.display = 'none';
         }
 
-        function renderGoalsLog() {
-            const container = document.getElementById('goals-log');
-            const teamGoals = goals.filter(g => g.team === currentTeam);
+        function recordGoal() {
+            const goalTeam = document.querySelector('input[name="goal-team"]:checked').value;
+            let scorer = document.getElementById('goal-scorer').value;
+            
+            // For team goals, require player selection
+            if (goalTeam === 'team' && !scorer) {
+                alert('Please select a player');
+                return;
+            }
+            
+            // For other team goals, use generic scorer name
+            if (goalTeam === 'other') {
+                scorer = 'Other Team Player';
+            }
+            
+            const goal = {
+                scorer: scorer,
+                team: goalTeam,
+                time: new Date().toLocaleTimeString(),
+                quarter: currentQuarter,
+                timestamp: Date.now()
+            };
+            
+            if (!goals[currentTeam]) {
+                goals[currentTeam] = [];
+            }
+            goals[currentTeam].push(goal);
+            
+            saveGoals();
+            updateScoreDisplay();
+            renderGoalsLog();
+            closeGoalModal();
+        }
+
+        function showManageGoalsModal() {
+            if (!currentTeam) {
+                alert('Please select a team first');
+                return;
+            }
+            
+            renderManageGoalsList();
+            document.getElementById('manage-goals-modal').style.display = 'block';
+        }
+
+        function renderManageGoalsList() {
+            const container = document.getElementById('goals-list');
+            container.innerHTML = '';
+            
+            const teamGoals = goals[currentTeam] || [];
             
             if (teamGoals.length === 0) {
-                container.innerHTML = '<p>No goals scored yet.</p>';
+                container.innerHTML = '<p>No goals recorded yet.</p>';
                 return;
             }
             
-            container.innerHTML = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Scorer</th>
-                            <th>Time</th>
-                            <th>Quarter</th>
-                            <th>Game Time</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${teamGoals.map(goal => `
-                            <tr>
-                                <td>${goal.scorer}</td>
-                                <td>${goal.time}</td>
-                                <td>${goal.quarter}</td>
-                                <td>${goal.quarterTime}</td>
-                            </tr>`).join('')}
-                    </tbody>
-                </table>
-            `;
-        }
-
-        function renderRotationLog() {
-            const logContainer = document.getElementById('rotation-log');
-            const logs = [];
-
-            if (!currentTeam) return;
-            
-            teams[currentTeam].forEach(p => {
-                p.rotationLog.forEach(entry => {
-                    logs.push({ name: p.name, ...entry });
-                });
+            teamGoals.forEach((goal, index) => {
+                const item = document.createElement('div');
+                item.className = 'goal-item';
+                
+                const info = document.createElement('div');
+                info.className = 'goal-info';
+                const teamName = goal.team === 'team' ? currentTeam : 'Other Team';
+                info.innerHTML = `
+                    <strong>${goal.scorer}</strong> (${teamName})<br>
+                    <small>${goal.quarter} - ${goal.time}</small>
+                `;
+                
+                const actions = document.createElement('div');
+                actions.className = 'goal-actions';
+                
+                const editBtn = document.createElement('button');
+                editBtn.textContent = '✏️ Edit';
+                editBtn.className = 'edit-button';
+                editBtn.onclick = () => editGoal(index);
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = '🗑 Delete';
+                deleteBtn.className = 'delete-button';
+                deleteBtn.onclick = () => deleteGoal(index);
+                
+                actions.appendChild(editBtn);
+                actions.appendChild(deleteBtn);
+                
+                item.appendChild(info);
+                item.appendChild(actions);
+                container.appendChild(item);
             });
-
-            logs.sort((a, b) => new Date(b.out) - new Date(a.out));
-
-            if (logs.length === 0) {
-                logContainer.innerHTML = '<p>No rotations yet.</p>';
-                return;
-            }
-
-            logContainer.innerHTML = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Player</th>
-                            <th>Subbed In</th>
-                            <th>Subbed Out</th>
-                            <th>Duration</th>
-                            <th>Quarter</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${logs.map(log => `
-                            <tr>
-                                <td>${log.name}</td>
-                                <td>${log.in}</td>
-                                <td>${log.out}</td>
-                                <td>${log.duration}</td>
-                                <td>${log.quarter || ''}</td>
-                            </tr>`).join('')}
-                    </tbody>
-                </table>
-            `;
         }
 
-        function updateCaptainOptions() {
-            const captainSelect = document.getElementById('captain-select');
-            captainSelect.innerHTML = '<option value="">None</option>';
+        function editGoal(index) {
+            editingGoalIndex = index;
+            const goal = goals[currentTeam][index];
             
-            if (!currentTeam) return;
+            // Populate edit modal
+            const select = document.getElementById('edit-goal-scorer');
+            select.innerHTML = '<option value="">Select Player</option>';
             
             teams[currentTeam].forEach(player => {
                 const option = document.createElement('option');
                 option.value = player.name;
                 option.textContent = player.name;
-                captainSelect.appendChild(option);
+                if (player.name === goal.scorer) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
             });
+            
+            // Set radio buttons
+            if (goal.team === 'team') {
+                document.getElementById('edit-team-radio').checked = true;
+            } else {
+                document.getElementById('edit-other-radio').checked = true;
+            }
+            
+            // Update visibility based on team selection
+            updateEditGoalScorerVisibility();
+            
+            document.getElementById('edit-goal-modal').style.display = 'block';
         }
 
-        function clearAllTime() {
-            if (!currentTeam) {
-                alert("Please select a team first.");
+        function updateEditGoalScorerVisibility() {
+            const goalTeam = document.querySelector('input[name="edit-goal-team"]:checked').value;
+            const scorerSelect = document.getElementById('edit-goal-scorer');
+            const scorerContainer = scorerSelect.parentElement;
+            
+            if (goalTeam === 'other') {
+                scorerContainer.style.display = 'none';
+                scorerSelect.value = ''; // Clear selection
+            } else {
+                scorerContainer.style.display = 'block';
+            }
+        }
+
+        function saveEditedGoal() {
+            const goalTeam = document.querySelector('input[name="edit-goal-team"]:checked').value;
+            let scorer = document.getElementById('edit-goal-scorer').value;
+            
+            // For team goals, require player selection
+            if (goalTeam === 'team' && !scorer) {
+                alert('Please select a player');
                 return;
             }
             
-            if (confirm("Reset all player times and rotation history?")) {
-                teams[currentTeam].forEach(p => {
-                    p.totalTime = 0;
-                    p.sessionStart = null;
-                    p.lastTimestamp = null;
-                    p.rotationLog = [];
-                    p.onField = false;
-                    p.notified = false;
-                    p.hasPlayed = false;
-                });
-                saveTeams();
-                updatePlayerDisplay();
-                renderRotationLog();
+            // For other team goals, use generic scorer name
+            if (goalTeam === 'other') {
+                scorer = 'Other Team Player';
+            }
+            
+            if (editingGoalIndex >= 0) {
+                goals[currentTeam][editingGoalIndex].scorer = scorer;
+                goals[currentTeam][editingGoalIndex].team = goalTeam;
+                
+                saveGoals();
+                updateScoreDisplay();
+                renderGoalsLog();
+                renderManageGoalsList();
+                closeEditGoalModal();
             }
         }
 
-        function formatTime(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        function closeEditGoalModal() {
+            document.getElementById('edit-goal-modal').style.display = 'none';
+            editingGoalIndex = -1;
+        }
+
+        function deleteGoal(index) {
+            if (confirm('Are you sure you want to delete this goal?')) {
+                goals[currentTeam].splice(index, 1);
+                saveGoals();
+                updateScoreDisplay();
+                renderGoalsLog();
+                renderManageGoalsList();
+            }
+        }
+
+        function closeManageGoalsModal() {
+            document.getElementById('manage-goals-modal').style.display = 'none';
+        }
+
+        function updateScoreDisplay() {
+            if (!currentTeam) return;
+            
+            const teamGoals = goals[currentTeam] || [];
+            const teamScore = teamGoals.filter(goal => goal.team === 'team').length;
+            const otherScore = teamGoals.filter(goal => goal.team === 'other').length;
+            
+            document.getElementById('team-score').textContent = `${currentTeam}: ${teamScore}`;
+            document.getElementById('other-score').textContent = `Other: ${otherScore}`;
+        }
+
+        function renderRotationLog() {
+            if (!currentTeam) return;
+            
+            const container = document.getElementById('rotation-log');
+            container.innerHTML = '';
+            
+            let allRotations = [];
+            teams[currentTeam].forEach(player => {
+                player.rotationLog.forEach(log => {
+                    allRotations.push({
+                        ...log,
+                        player: player.name
+                    });
+                });
+            });
+            
+            // Sort by time (assuming chronological order by push)
+            allRotations.sort((a, b) => new Date('1970/01/01 ' + a.in) - new Date('1970/01/01 ' + b.in));
+            
+            if (allRotations.length === 0) {
+                container.innerHTML = '<p>No rotations recorded yet.</p>';
+                return;
+            }
+            
+            const table = document.createElement('table');
+            table.innerHTML = `
+                <tr>
+                    <th>Player</th>
+                    <th>Quarter</th>
+                    <th>In</th>
+                    <th>Out</th>
+                    <th>Duration</th>
+                </tr>
+            `;
+            
+            allRotations.forEach(rotation => {
+                const row = table.insertRow();
+                row.innerHTML = `
+                    <td>${rotation.player}</td>
+                    <td>${rotation.quarter}</td>
+                    <td>${rotation.in}</td>
+                    <td>${rotation.out}</td>
+                    <td>${rotation.duration}</td>
+                `;
+            });
+            
+            container.appendChild(table);
+        }
+
+        function renderGoalsLog() {
+            if (!currentTeam) return;
+            
+            const container = document.getElementById('goals-log');
+            container.innerHTML = '';
+            
+            const teamGoals = goals[currentTeam] || [];
+            
+            if (teamGoals.length === 0) {
+                container.innerHTML = '<p>No goals recorded yet.</p>';
+                return;
+            }
+            
+            const table = document.createElement('table');
+            table.innerHTML = `
+                <tr>
+                    <th>Scorer</th>
+                    <th>Team</th>
+                    <th>Quarter</th>
+                    <th>Time</th>
+                </tr>
+            `;
+            
+            teamGoals.forEach(goal => {
+                const row = table.insertRow();
+                const teamName = goal.team === 'team' ? currentTeam : 'Other Team';
+                row.innerHTML = `
+                    <td>${goal.scorer}</td>
+                    <td>${teamName}</td>
+                    <td>${goal.quarter}</td>
+                    <td>${goal.time}</td>
+                `;
+            });
+            
+            container.appendChild(table);
+        }
+
+        function showResetWarning() {
+            if (!currentTeam) {
+                alert('Please select a team first');
+                return;
+            }
+            document.getElementById('reset-warning-modal').style.display = 'block';
+        }
+
+        function closeResetWarning() {
+            document.getElementById('reset-warning-modal').style.display = 'none';
+        }
+
+        function confirmReset() {
+            if (!currentTeam) return;
+            
+            // Reset all player times and logs
+            teams[currentTeam].forEach(player => {
+                player.totalTime = 0;
+                player.onField = false;
+                player.sessionStart = null;
+                player.lastTimestamp = null;
+                player.rotationLog = [];
+            });
+            
+            // Reset goals
+            if (goals[currentTeam]) {
+                goals[currentTeam] = [];
+            }
+            
+            // Reset quarter clocks for this team
+            if (teamQuarterClocks[currentTeam]) {
+                teamQuarterClocks[currentTeam] = { Q1: 0, Q2: 0, Q3: 0, Q4: 0, OT: 0 };
+            }
+            
+            // Stop any running timers
+            if (quarterTimerInterval) {
+                clearInterval(quarterTimerInterval);
+                quarterTimerInterval = null;
+            }
+            
+            saveTeams();
+            saveGoals();
+            saveTeamQuarterClocks();
+            updatePlayerDisplay();
+            renderRotationLog();
+            renderGoalsLog();
+            updateScoreDisplay();
+            updateQuarterClock();
+            closeResetWarning();
+        }
+
+        function shareTeamData() {
+            if (!currentTeam) {
+                alert('Please select a team first');
+                return;
+            }
+            
+            const teamData = {
+                team: teams[currentTeam],
+                goals: goals[currentTeam] || [],
+                quarterClocks: teamQuarterClocks[currentTeam] || { Q1: 0, Q2: 0, Q3: 0, Q4: 0, OT: 0 },
+                teamName: currentTeam
+            };
+            
+            const encodedData = btoa(JSON.stringify(teamData));
+            const shareUrl = `${window.location.origin}${window.location.pathname}?import=${encodedData}`;
+            
+            document.getElementById('share-url').textContent = shareUrl;
+            document.getElementById('share-modal').style.display = 'block';
+        }
+
+        function copyShareUrl() {
+            const shareUrl = document.getElementById('share-url').textContent;
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                alert('Link copied to clipboard!');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = shareUrl;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('Link copied to clipboard!');
+            });
+        }
+
+        function closeShareModal() {
+            document.getElementById('share-modal').style.display = 'none';
+        }
+
+        function checkForImportData() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const importData = urlParams.get('import');
+            
+            if (importData) {
+                try {
+                    pendingImportData = JSON.parse(atob(importData));
+                    document.getElementById('import-modal').style.display = 'block';
+                } catch (e) {
+                    console.error('Invalid import data');
+                    // Remove the import parameter
+                    const url = new URL(window.location);
+                    url.searchParams.delete('import');
+                    window.history.replaceState({}, '', url);
+                }
+            }
+        }
+
+        function confirmImport() {
+            if (!pendingImportData) return;
+            
+            const { team, goals: importedGoals, quarterClocks, teamName } = pendingImportData;
+            
+            // Import team data
+            teams[teamName] = team;
+            goals[teamName] = importedGoals;
+            
+            // Import quarter clocks if available
+            if (quarterClocks) {
+                teamQuarterClocks[teamName] = quarterClocks;
+            }
+            
+            // Update UI
+            updateTeamOptions();
+            
+            // Select the imported team
+            document.getElementById('team-select').value = teamName;
+            loadSelectedTeam();
+            
+            saveTeams();
+            saveGoals();
+            saveTeamQuarterClocks();
+            
+            // Clear import data and URL
+            pendingImportData = null;
+            const url = new URL(window.location);
+            url.searchParams.delete('import');
+            window.history.replaceState({}, '', url);
+            
+            document.getElementById('import-modal').style.display = 'none';
+            alert(`Team "${teamName}" imported successfully!`);
+        }
+
+        function cancelImport() {
+            pendingImportData = null;
+            // Remove import parameter from URL
+            const url = new URL(window.location);
+            url.searchParams.delete('import');
+            window.history.replaceState({}, '', url);
+            
+            document.getElementById('import-modal').style.display = 'none';
         }
 
         function saveTeams() {
@@ -1058,11 +1674,18 @@ tr:nth-child(even) {
         }
 
         function loadTeams() {
-            const data = localStorage.getItem('soccerTeams');
-            if (data) {
-                teams = JSON.parse(data);
+            const saved = localStorage.getItem('soccerTeams');
+            if (saved) {
+                teams = JSON.parse(saved);
+                updateTeamOptions();
+                
+                // Load previously selected team
+                const savedTeam = localStorage.getItem('selectedTeam');
+                if (savedTeam && teams[savedTeam]) {
+                    document.getElementById('team-select').value = savedTeam;
+                    loadSelectedTeam();
+                }
             }
-            updateTeamOptions();
         }
 
         function saveGoals() {
@@ -1070,42 +1693,52 @@ tr:nth-child(even) {
         }
 
         function loadGoals() {
-            const data = localStorage.getItem('soccerGoals');
-            if (data) {
-                goals = JSON.parse(data);
+            const saved = localStorage.getItem('soccerGoals');
+            if (saved) {
+                goals = JSON.parse(saved);
             }
         }
 
-        function startUpdateInterval() {
-            stopUpdateInterval();
-            updateInterval = setInterval(() => {
-                updatePlayerDisplay();
-            }, 1000);
-        }
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTeams();
+            loadGoals();
+            loadTeamQuarterClocks();
+            checkForImportData();
+            updateQuarterClock();
+        });
 
-        function stopUpdateInterval() {
-            if (updateInterval) {
-                clearInterval(updateInterval);
-                updateInterval = null;
+        // Handle new player name input enter key
+        document.getElementById('new-player-name').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addPlayerFromModal();
             }
-        }
+        });
 
-        // Request notification permission
-        if ('Notification' in window && Notification.permission !== 'granted') {
-            Notification.requestPermission();
-        }
-
-        // Initialize
-        loadTeams();
-        loadGoals();
-        updateQuarterClock();
+        // Add event listeners for goal team radio buttons
+        document.addEventListener('DOMContentLoaded', () => {
+            // For goal modal
+            const goalTeamRadios = document.querySelectorAll('input[name="goal-team"]');
+            goalTeamRadios.forEach(radio => {
+                radio.addEventListener('change', updateGoalScorerVisibility);
+            });
+            
+            // For edit goal modal
+            const editGoalTeamRadios = document.querySelectorAll('input[name="edit-goal-team"]');
+            editGoalTeamRadios.forEach(radio => {
+                radio.addEventListener('change', updateEditGoalScorerVisibility);
+            });
+        });
 
         // Close modals when clicking outside
-        window.onclick = function(event) {
-            if (event.target.className === 'modal') {
-                event.target.style.display = 'none';
-            }
-        }
+        window.addEventListener('click', (e) => {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        });
     </script>
 </body>
 </html>
