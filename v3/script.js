@@ -6,7 +6,7 @@ let teamQuarterClocks = {};
 let quarterTimerInterval = null;
 let quarterStartTime = null;
 let currentQuarter = 'Q1';
-let events = [];
+let events = {};
 let soundEnabled = true;
 let updateInterval = null;
 let controlsCollapsed = false;
@@ -14,6 +14,8 @@ let rotationHistoryCollapsed = true;
 let eventModalMode = 'add';
 let editingEventIndex = -1;
 let pendingImportData = null;
+let teamCaptains = {}; // NEW: Store captains per team
+let teamGoaltenders = {}; // NEW: Store goaltenders per team
 
 // Audio context for notification sound
 const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -291,6 +293,7 @@ function loadSelectedTeam() {
         renderPlayerCards();
         updateCaptainOptions();
         updateGoaltenderOptions();
+        loadCaptainAndGoaltender(); // NEW: Load saved captain and goaltender
         renderRotationLog();
         renderEventsLog();
         updateScoreDisplay();
@@ -469,11 +472,40 @@ function stopUpdateInterval() {
     }
 }
 
+// NEW: Save captain selection
+function saveCaptain() {
+    if (!currentTeam) return;
+    teamCaptains[currentTeam] = document.getElementById('captain-select').value;
+    localStorage.setItem('teamCaptains', JSON.stringify(teamCaptains));
+}
+
+// NEW: Save goaltender selection
+function saveGoaltender() {
+    if (!currentTeam) return;
+    teamGoaltenders[currentTeam] = document.getElementById('goaltender-select').value;
+    localStorage.setItem('teamGoaltenders', JSON.stringify(teamGoaltenders));
+}
+
+// NEW: Load captain and goaltender for current team
+function loadCaptainAndGoaltender() {
+    if (!currentTeam) return;
+    
+    if (teamCaptains[currentTeam]) {
+        document.getElementById('captain-select').value = teamCaptains[currentTeam];
+    }
+    
+    if (teamGoaltenders[currentTeam]) {
+        document.getElementById('goaltender-select').value = teamGoaltenders[currentTeam];
+    }
+    
+    updatePlayerDisplay();
+}
+
 function updateCaptainOptions() {
     if (!currentTeam) return;
     
     const select = document.getElementById('captain-select');
-    const currentValue = select.value;
+    const currentValue = teamCaptains[currentTeam] || select.value;
     select.innerHTML = '<option value="">None</option>';
     
     teams[currentTeam].forEach(player => {
@@ -491,7 +523,7 @@ function updateGoaltenderOptions() {
     if (!currentTeam) return;
     
     const select = document.getElementById('goaltender-select');
-    const currentValue = select.value;
+    const currentValue = teamGoaltenders[currentTeam] || select.value;
     select.innerHTML = '<option value="">None</option>';
     
     teams[currentTeam].forEach(player => {
@@ -1068,8 +1100,8 @@ function generateAndCopyShareUrl() {
     
     navigator.clipboard.writeText(shareUrl).then(() => {
         alert("Share link copied to clipboard!\n\nNow redirecting you to tinyurl.com - post your link there for a more shareable URL");
-        closeShareModal();
         window.open('https://tinyurl.com', '_blank');
+        closeShareModal();
     }).catch(() => {
         const textArea = document.createElement('textarea');
         textArea.value = shareUrl;
@@ -1077,9 +1109,9 @@ function generateAndCopyShareUrl() {
         textArea.select();
         document.execCommand('copy');
         document.body.removeChild(textArea);
-        alert('Share link copied to clipboard!');
-        closeShareModal();
+        alert("Share link copied to clipboard!\n\nNow redirecting you to tinyurl.com - post your link there for a more shareable URL");
         window.open('https://tinyurl.com', '_blank');
+        closeShareModal();
     });
 }
 
@@ -1329,6 +1361,32 @@ function loadTeamQuarterClocks() {
     }
 }
 
+// NEW: Load captains from localStorage
+function loadCaptains() {
+    try {
+        const saved = localStorage.getItem('teamCaptains');
+        if (saved) {
+            teamCaptains = JSON.parse(saved);
+        }
+    } catch (e) {
+        console.error('Error loading captains:', e);
+        teamCaptains = {};
+    }
+}
+
+// NEW: Load goaltenders from localStorage
+function loadGoaltenders() {
+    try {
+        const saved = localStorage.getItem('teamGoaltenders');
+        if (saved) {
+            teamGoaltenders = JSON.parse(saved);
+        }
+    } catch (e) {
+        console.error('Error loading goaltenders:', e);
+        teamGoaltenders = {};
+    }
+}
+
 function loadUserPreferences() {
     const savedSound = localStorage.getItem('soundEnabled');
     if (savedSound !== null) {
@@ -1369,10 +1427,23 @@ document.addEventListener('DOMContentLoaded', () => {
     loadTeams();
     loadEvents();
     loadTeamQuarterClocks();
+    loadCaptains(); // NEW: Load captains on startup
+    loadGoaltenders(); // NEW: Load goaltenders on startup
     loadUserPreferences();
     checkForImportData();
     updateQuarterClock();
     initializeQuarterButtons();
+    
+    // NEW: Add event listeners for captain and goaltender changes
+    document.getElementById('captain-select').addEventListener('change', () => {
+        saveCaptain();
+        updatePlayerDisplay();
+    });
+    
+    document.getElementById('goaltender-select').addEventListener('change', () => {
+        saveGoaltender();
+        updatePlayerDisplay();
+    });
     
     document.getElementById('new-player-name').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
