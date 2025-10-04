@@ -1067,10 +1067,9 @@ function generateAndCopyShareUrl() {
     const shareUrl = `${window.location.origin}${window.location.pathname}?data=${encodedData}`;
     
     navigator.clipboard.writeText(shareUrl).then(() => {
-        if (confirm("Share link copied to clipboard!\n\nNow redirecting you to tinyurl.com - post your link there for a more shareable URL")) {
-            window.open('https://tinyurl.com', '_blank');
-        }
+        alert("Share link copied to clipboard!\n\nNow redirecting you to tinyurl.com - post your link there for a more shareable URL");
         closeShareModal();
+        window.open('https://tinyurl.com', '_blank');
     }).catch(() => {
         const textArea = document.createElement('textarea');
         textArea.value = shareUrl;
@@ -1080,6 +1079,7 @@ function generateAndCopyShareUrl() {
         document.body.removeChild(textArea);
         alert('Share link copied to clipboard!');
         closeShareModal();
+        window.open('https://tinyurl.com', '_blank');
     });
 }
 
