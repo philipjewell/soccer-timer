@@ -1067,7 +1067,9 @@ function generateAndCopyShareUrl() {
     const shareUrl = `${window.location.origin}${window.location.pathname}?data=${encodedData}`;
     
     navigator.clipboard.writeText(shareUrl).then(() => {
-        alert('Share link copied to clipboard!');
+        if (confirm("Share link copied to clipboard!\n\nNow redirecting you to tinyurl.com - post your link there for a more shareable URL")) {
+            window.open('https://tinyurl.com', '_blank');
+        }
         closeShareModal();
     }).catch(() => {
         const textArea = document.createElement('textarea');
