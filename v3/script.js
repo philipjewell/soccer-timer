@@ -1099,8 +1099,9 @@ function generateAndCopyShareUrl() {
     const shareUrl = `${window.location.origin}${window.location.pathname}?data=${encodedData}`;
     
     navigator.clipboard.writeText(shareUrl).then(() => {
-        alert("Share link copied to clipboard!\n\nNow redirecting you to tinyurl.com - post your link there for a more shareable URL");
-        window.open('https://tinyurl.com', '_blank');
+        if (confirm("Share link copied to clipboard!\n\nNow redirecting you to tinyurl.com - post your link there for a more shareable URL")) {
+            window.open('https://tinyurl.com', '_blank');
+        }
         closeShareModal();
     }).catch(() => {
         const textArea = document.createElement('textarea');
@@ -1109,8 +1110,9 @@ function generateAndCopyShareUrl() {
         textArea.select();
         document.execCommand('copy');
         document.body.removeChild(textArea);
-        alert("Share link copied to clipboard!\n\nNow redirecting you to tinyurl.com - post your link there for a more shareable URL");
-        window.open('https://tinyurl.com', '_blank');
+        if (confirm("Share link copied to clipboard!\n\nNow redirecting you to tinyurl.com - post your link there for a more shareable URL")) {
+            window.open('https://tinyurl.com', '_blank');
+        }
         closeShareModal();
     });
 }
@@ -1342,6 +1344,13 @@ function loadEvents() {
         const saved = localStorage.getItem('soccerEvents');
         if (saved) {
             events = JSON.parse(saved);
+            // Render events if we have a current team selected
+            if (currentTeam && events[currentTeam]) {
+                renderEventsLog();
+                updateScoreDisplay();
+            }
+        } else {
+            events = {}; // Initialize as empty object if nothing saved
         }
     } catch (e) {
         console.error('Error loading events:', e);
@@ -1424,17 +1433,21 @@ function loadUserPreferences() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    loadTeams();
+    // Load all data first before rendering anything
     loadEvents();
     loadTeamQuarterClocks();
-    loadCaptains(); // NEW: Load captains on startup
-    loadGoaltenders(); // NEW: Load goaltenders on startup
+    loadCaptains();
+    loadGoaltenders();
     loadUserPreferences();
+    
+    // Then load teams, which will trigger loadSelectedTeam if there's a saved team
+    loadTeams();
+    
     checkForImportData();
     updateQuarterClock();
     initializeQuarterButtons();
     
-    // NEW: Add event listeners for captain and goaltender changes
+    // Add event listeners for captain and goaltender changes
     document.getElementById('captain-select').addEventListener('change', () => {
         saveCaptain();
         updatePlayerDisplay();
