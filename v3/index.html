@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soccer Time Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="header">
+        <h1 id="team-title">Soccer Time Tracker</h1>
+        <div class="clock-display" id="quarter-clock">0:00</div>
+        <div class="sound-toggle" onclick="toggleSound()">
+            <span id="sound-status">🔊</span>
+        </div>
+    </div>
+
+    <div class="controls">
+        <div class="controls-header">
+            <h3 style="margin: 0; color: #667eea;">Controls</h3>
+            <button class="collapse-toggle" onclick="toggleControls()" id="collapse-toggle">🔼</button>
+        </div>
+
+        <div class="collapsible-content" id="collapsible-content">
+            <div class="control-row">
+                <label for="rotation">Rotation time:</label>
+                <input type="number" id="rotation" value="5" min="1" onchange="saveRotationTime()">
+            </div>
+
+            <div class="control-row">
+                <label for="team-select">Team:</label>
+                <select id="team-select" onchange="loadSelectedTeam()">
+                    <option value="">Select Team</option>
+                </select>
+            </div>
+
+            <div class="control-row">
+                <label for="captain-select">Captain:</label>
+                <select id="captain-select" onchange="updatePlayerDisplay()">
+                    <option value="">None</option>
+                </select>
+            </div>
+
+            <div class="control-row">
+                <label for="goaltender-select">Goaltender:</label>
+                <select id="goaltender-select" onchange="updatePlayerDisplay()">
+                    <option value="">None</option>
+                </select>
+            </div>
+
+            <div class="clock-controls">
+                <button onclick="showManagePlayersModal()">👥 Manage Players</button>
+                <button onclick="createTeam()">➕ Create Team</button>
+            </div>
+
+            <div class="clock-controls">
+                <button onclick="showResetWarning()">🔄 Reset Times</button>
+                <button onclick="showManageEventsModal()">📝 Manage Events</button>
+                <button class="share-button" onclick="showShareModal()">🔗 Share Team</button>
+            </div>
+        </div>
+
+        <label>Select Quarter:</label>
+        <div class="quarter-selector" id="quarter">
+            <button data-quarter="Q1" class="quarter-button active">Q1</button>
+            <button data-quarter="Q2" class="quarter-button">Q2</button>
+            <button data-quarter="Q3" class="quarter-button">Q3</button>
+            <button data-quarter="Q4" class="quarter-button">Q4</button>
+            <button data-quarter="OT" class="quarter-button">OT</button>
+        </div>
+
+        <div class="clock-controls">
+            <button class="start-button" onclick="startQuarterClock()">▶ Start Clock</button>
+            <button class="stop-button" onclick="stopQuarterClock()">⏸ Stop Clock</button>
+        </div>
+    </div>
+
+    <div class="players-grid" id="players"></div>
+
+    <div class="history-section">
+        <div class="history-section-header">
+            <h2>Rotation History</h2>
+            <button class="collapse-toggle" onclick="toggleRotationHistory()" id="rotation-toggle">🔽</button>
+        </div>
+        <div id="rotation-log" class="collapsible-content collapsed"></div>
+    </div>
+
+    <div class="history-section">
+        <h2>Events</h2>
+        <div id="events-log"></div>
+    </div>
+
+    <div class="goal-section">
+        <div class="score-display">
+            <span class="team-score" id="team-score">Team: 0</span>
+        </div>
+        <div class="score-display">
+            <span class="other-score" id="other-score">Other: 0</span>
+        </div>
+        <button class="event-button" onclick="showEventModal()">📝 Log Event</button>
+    </div>
+
+    <!-- Manage Players Modal -->
+    <div id="manage-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                Manage Players
+                <span class="modal-close" onclick="closeManageModal()">✕</span>
+            </div>
+            <div class="modal-body">
+                <div class="add-player-row">
+                    <input type="text" id="new-player-name" placeholder="Enter player name">
+                    <button onclick="addPlayerFromModal()">➕ Add</button>
+                </div>
+                <div class="player-list" id="player-list"></div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="savePlayersFromModal()">✅ Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Universal Event Modal -->
+    <div id="event-modal" class="modal event-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="event-modal-title">Log Event</span>
+                <span class="modal-close" onclick="closeEventModal()">✕</span>
+            </div>
+            <div class="modal-body">
+                <div class="event-type-container">
+                    <label for="event-type">Event Type:</label>
+                    <select id="event-type" onchange="updateEventOptions()">
+                        <option value="">Select Event Type</option>
+                        <option value="goal">⚽ Goal</option>
+                        <option value="penalty">🚨 Penalty Point</option>
+                        <option value="save">🛡️ Goal Prevented</option>
+                        <option value="injury">🤕 Player Injury</option>
+                        <option value="cleat">👟 Lost Cleat</option>
+                        <option value="laces">👟 Untied Laces</option>
+                        <option value="headbutt">🤕 Ball Head-butt</option>
+                    </select>
+                </div>
+                <div class="control-row" id="quarter-row" style="display: none;">
+                    <label for="event-quarter">Quarter:</label>
+                    <select id="event-quarter">
+                        <option value="Q1">Q1</option>
+                        <option value="Q2">Q2</option>
+                        <option value="Q3">Q3</option>
+                        <option value="Q4">Q4</option>
+                        <option value="OT">OT</option>
+                    </select>
+                </div>
+                <div class="event-options" id="event-options"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="event-submit-btn" onclick="handleEventSubmit()">✅ Record Event</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Events Modal -->
+    <div id="manage-events-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                Manage Events
+                <span class="modal-close" onclick="closeManageEventsModal()">✕</span>
+            </div>
+            <div class="modal-body">
+                <button onclick="showAddEventModal()" style="margin-bottom: 15px;">➕ Add Event</button>
+                <div class="events-list" id="events-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Warning Modal -->
+    <div id="reset-warning-modal" class="modal">
+        <div class="modal-content warning-modal">
+            <div class="modal-header">
+                ⚠️ Warning!
+                <span class="modal-close" onclick="closeResetWarning()">✕</span>
+            </div>
+            <div class="modal-body">
+                <p>Resetting will clear out the rotation history as well as the events history.</p>
+                <p>Are you sure you want to do this?</p>
+            </div>
+            <div class="modal-footer">
+                <button onclick="confirmReset()" style="background: linear-gradient(135deg, #f857a6 0%, #ff5858 100%);">Yes, Reset Everything</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Data Modal -->
+    <div id="import-modal" class="modal">
+        <div class="modal-content import-modal">
+            <div class="modal-header">
+                📥 Import Team Data
+                <span class="modal-close" onclick="cancelImport()">✕</span>
+            </div>
+            <div class="modal-body">
+                <p>You're about to import team data that was shared with you.</p>
+                <p>This will overwrite your current data for this team.</p>
+                <p>Do you want to continue?</p>
+            </div>
+            <div class="modal-footer">
+                <button onclick="confirmImport()">Yes, Import</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div id="share-modal" class="modal">
+        <div class="modal-content share-modal">
+            <div class="modal-header">
+                🔗 Share Team Data
+                <span class="modal-close" onclick="closeShareModal()">✕</span>
+            </div>
+            <div class="modal-body">
+                <div class="share-options">
+                    <h4>Select what to share:</h4>
+                    <div class="select-all-options">
+                        <button onclick="selectAllShareOptions()">Select All</button>
+                        <button onclick="deselectAllShareOptions()">Deselect All</button>
+                    </div>
+                    <div class="share-option" style="display:none">
+                        <input type="checkbox" id="share-players" checked disabled>
+                        <label for="share-players">Players and Captain (always included)</label>
+                    </div>
+                    <div class="share-option">
+                        <input type="checkbox" id="share-times">
+                        <label for="share-times">Player Clocks</label>
+                    </div>
+                    <div class="share-option">
+                        <input type="checkbox" id="share-rotation">
+                        <label for="share-rotation">Rotation History</label>
+                    </div>
+                    <div class="share-option">
+                        <input type="checkbox" id="share-events" checked>
+                        <label for="share-events">Event History</label>
+                    </div>
+                    <div class="share-option">
+                        <input type="checkbox" id="share-quarters">
+                        <label for="share-quarters">Quarter Clocks</label>
+                    </div>
+                </div>
+                <p>Player roster always included in sharing link</p>
+            </div>
+            <div class="modal-footer">
+                <button onclick="generateAndCopyShareUrl()" style="width: 100%; margin-bottom: 15px;">Generate & Copy Share Link</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
