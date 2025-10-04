@@ -11,9 +11,7 @@ let soundEnabled = true;
 let updateInterval = null;
 let controlsCollapsed = false;
 let rotationHistoryCollapsed = true;
-
-// Event modal state
-let eventModalMode = 'add'; // 'add', 'edit', 'log'
+let eventModalMode = 'add';
 let editingEventIndex = -1;
 let pendingImportData = null;
 
@@ -41,7 +39,7 @@ function playDing() {
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
     
-    oscillator.frequency.value = 880; // A5 note
+    oscillator.frequency.value = 880;
     oscillator.type = 'sine';
     
     gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
@@ -109,11 +107,9 @@ function loadRotationTime() {
     }
 }
 
-// Initialize quarter buttons
 function initializeQuarterButtons() {
     document.querySelectorAll('.quarter-button').forEach(button => {
         button.addEventListener('click', () => {
-            // Save current quarter's time
             if (quarterTimerInterval) {
                 stopQuarterClock();
             }
@@ -139,13 +135,11 @@ function startQuarterClock() {
     quarterStartTime = now - (currentClocks[currentQuarter] * 1000);
     quarterTimerInterval = setInterval(updateQuarterClock, 100);
     
-    // Update persistent state
     quarterClockState.isRunning = true;
     quarterClockState.startTime = quarterStartTime;
     quarterClockState.elapsedTime = currentClocks[currentQuarter];
     saveQuarterClockState();
     
-    // Start player timers for those on field
     teams[currentTeam]?.forEach(player => {
         if (player.onField && !player.sessionStart) {
             player.sessionStart = now;
@@ -168,21 +162,18 @@ function stopQuarterClock() {
         }
     }
     
-    // Update persistent state
     quarterClockState.isRunning = false;
     quarterClockState.startTime = null;
     const currentClocks = getCurrentQuarterClocks();
     quarterClockState.elapsedTime = currentClocks[currentQuarter];
     saveQuarterClockState();
     
-    // Log all player times for those on field
     const now = Date.now();
     teams[currentTeam]?.forEach(player => {
         if (player.onField && player.sessionStart) {
             const sessionTime = Math.floor((now - player.sessionStart) / 1000);
             player.totalTime += sessionTime;
             
-            // Add to rotation log
             player.rotationLog.push({
                 in: new Date(player.sessionStart).toLocaleTimeString(),
                 out: new Date(now).toLocaleTimeString(),
@@ -190,7 +181,6 @@ function stopQuarterClock() {
                 quarter: currentQuarter
             });
             
-            // Reset session tracking but keep on field
             player.sessionStart = null;
             player.lastTimestamp = null;
         }
@@ -246,7 +236,6 @@ function loadQuarterClockState() {
             if (state.team === currentTeam && state.isRunning) {
                 quarterClockState = state;
                 
-                // Restore the running clock
                 const now = Date.now();
                 const timeSinceStart = Math.floor((now - state.startTime) / 1000);
                 const currentClocks = getCurrentQuarterClocks();
@@ -255,7 +244,6 @@ function loadQuarterClockState() {
                 quarterStartTime = state.startTime;
                 quarterTimerInterval = setInterval(updateQuarterClock, 100);
                 
-                // Set active quarter
                 currentQuarter = state.quarter;
                 document.querySelectorAll('.quarter-button').forEach(btn => {
                     btn.classList.toggle('active', btn.getAttribute('data-quarter') === currentQuarter);
@@ -298,7 +286,6 @@ function loadSelectedTeam() {
     const header = document.getElementById('team-title');
     header.textContent = currentTeam ? `${currentTeam} Time Tracker` : 'Soccer Time Tracker';
     
-    // Save selected team to localStorage
     if (currentTeam) {
         localStorage.setItem('selectedTeam', currentTeam);
         renderPlayerCards();
@@ -317,7 +304,6 @@ function loadSelectedTeam() {
         document.getElementById('quarter-clock').textContent = '0:00';
         stopUpdateInterval();
         
-        // Clear quarter clock state
         if (quarterTimerInterval) {
             clearInterval(quarterTimerInterval);
             quarterTimerInterval = null;
@@ -379,18 +365,14 @@ function updatePlayerDisplay() {
         
         timeDiv.textContent = formatTime(displayTime);
         
-        // Reset classes
         card.className = 'player-card';
         
-        // Remove existing icons
         const existingAlert = card.querySelector('.alert-icon');
         if (existingAlert) existingAlert.remove();
         
-        // Add appropriate class based on state
         if (player.onField) {
             card.classList.add('on-field');
             
-            // Warning and alert states for on-field players
             if (sessionTime >= rotationSeconds * 0.8) {
                 card.classList.add('warning');
             }
@@ -406,13 +388,11 @@ function updatePlayerDisplay() {
             card.classList.add('not-played');
         }
         
-        // Remove existing badges
         const existingCaptainBadge = card.querySelector('.captain-badge');
         const existingGoaltenderBadge = card.querySelector('.goaltender-badge');
         if (existingCaptainBadge) existingCaptainBadge.remove();
         if (existingGoaltenderBadge) existingGoaltenderBadge.remove();
         
-        // Captain badge
         if (captain === player.name) {
             const badge = document.createElement('div');
             badge.className = 'captain-badge';
@@ -420,7 +400,6 @@ function updatePlayerDisplay() {
             card.appendChild(badge);
         }
         
-        // Goaltender badge
         if (goaltender === player.name) {
             const badge = document.createElement('div');
             badge.className = 'goaltender-badge';
@@ -443,7 +422,6 @@ function toggleField(playerIndex) {
     const now = Date.now();
     
     if (player.onField) {
-        // Player coming off field - remove alert and stop sounds
         const card = document.getElementById(`player-${playerIndex}`);
         const alertIcon = card?.querySelector('.alert-icon');
         if (alertIcon) alertIcon.remove();
@@ -452,7 +430,6 @@ function toggleField(playerIndex) {
             const sessionTime = Math.floor((now - player.sessionStart) / 1000);
             player.totalTime += sessionTime;
             
-            // Add to rotation log
             player.rotationLog.push({
                 in: new Date(player.sessionStart).toLocaleTimeString(),
                 out: new Date(now).toLocaleTimeString(),
@@ -465,9 +442,7 @@ function toggleField(playerIndex) {
         }
         player.onField = false;
     } else {
-        // Player going on field
         player.onField = true;
-        // Only start session timer if quarter clock is running
         if (quarterTimerInterval) {
             player.sessionStart = now;
             player.lastTimestamp = now;
@@ -530,7 +505,6 @@ function updateGoaltenderOptions() {
     });
 }
 
-// Universal Event Modal Functions
 function showEventModal() {
     if (!currentTeam) {
         alert('Please select a team first');
@@ -553,12 +527,10 @@ function editEvent(index) {
     editingEventIndex = index;
     setupEventModal();
     
-    // Populate with existing event data
     const event = events[currentTeam][index];
     document.getElementById('event-type').value = event.type;
     updateEventOptions();
     
-    // Set specific values based on event type
     if (event.type === 'goal') {
         if (event.team === 'team') {
             document.querySelector('input[name="event-team"][value="team"]').checked = true;
@@ -577,11 +549,9 @@ function editEvent(index) {
 }
 
 function setupEventModal() {
-    // Clear form
     document.getElementById('event-type').value = '';
     document.getElementById('event-options').innerHTML = '';
     
-    // Set title and button text based on mode
     const titleMap = {
         'log': 'Log Event',
         'add': 'Add Event',
@@ -597,7 +567,6 @@ function setupEventModal() {
     document.getElementById('event-modal-title').textContent = titleMap[eventModalMode];
     document.getElementById('event-submit-btn').textContent = buttonMap[eventModalMode];
     
-    // Show/hide quarter selection
     const quarterRow = document.getElementById('quarter-row');
     if (eventModalMode === 'add') {
         quarterRow.style.display = 'flex';
@@ -630,7 +599,6 @@ function updateEventOptions() {
                 </div>
             `;
             
-            // Populate player options
             const select = document.getElementById('event-player');
             teams[currentTeam].forEach(player => {
                 const option = document.createElement('option');
@@ -639,7 +607,6 @@ function updateEventOptions() {
                 select.appendChild(option);
             });
             
-            // Add event listeners for team radio buttons
             const teamRadios = document.querySelectorAll('input[name="event-team"]');
             teamRadios.forEach(radio => {
                 radio.addEventListener('change', updateEventPlayerVisibility);
@@ -661,14 +628,12 @@ function updateEventOptions() {
             `;
         }
     } else if (eventType && eventType !== 'penalty') {
-        // For other events that require player selection
         optionsContainer.innerHTML = `
             <select id="event-player">
                 <option value="">Select Player</option>
             </select>
         `;
         
-        // Populate player options
         const select = document.getElementById('event-player');
         teams[currentTeam].forEach(player => {
             const option = document.createElement('option');
@@ -763,7 +728,6 @@ function closeEventModal() {
     editingEventIndex = -1;
 }
 
-// Manage Events Functions
 function showManageEventsModal() {
     if (!currentTeam) {
         alert('Please select a team first');
@@ -783,546 +747,6 @@ function renderManageEventsList() {
     if (teamEvents.length === 0) {
         container.innerHTML = '<p>No events recorded yet.</p>';
         return;
-    }
-    
-    const table = document.createElement('table');
-    table.innerHTML = `
-        <tr>
-            <th>Event</th>
-            <th>Player</th>
-            <th>Team</th>
-            <th>Quarter</th>
-            <th>Time</th>
-        </tr>
-    `;
-    
-    const eventTypeMap = {
-        goal: '⚽ Goal',
-        penalty: '🚨 Penalty Point',
-        save: '🛡️ Goal Prevented',
-        injury: '🤕 Player Injury',
-        cleat: '👟 Lost Cleat',
-        laces: '👟 Untied Laces',
-        headbutt: '🤕 Ball Head-butt'
-    };
-    
-    teamEvents.forEach(event => {
-        const row = table.insertRow();
-        const teamName = event.team === 'team' ? currentTeam : 'Other Team';
-        row.innerHTML = `
-            <td>${eventTypeMap[event.type]}</td>
-            <td>${event.player}</td>
-            <td>${teamName}</td>
-            <td>${event.quarter}</td>
-            <td>${event.time}</td>
-        `;
-    });
-    
-    container.appendChild(table);
-}
-
-// Player Management Functions
-function showManagePlayersModal() {
-    if (!currentTeam) {
-        alert('Please select a team first');
-        return;
-    }
-    
-    tempPlayers = JSON.parse(JSON.stringify(teams[currentTeam]));
-    renderTempPlayers();
-    document.getElementById('manage-modal').style.display = 'block';
-}
-
-function renderTempPlayers() {
-    const container = document.getElementById('player-list');
-    container.innerHTML = '';
-    
-    tempPlayers.forEach((player, index) => {
-        const item = document.createElement('div');
-        item.className = 'player-item';
-        
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.value = player.name;
-        input.onchange = (e) => tempPlayers[index].name = e.target.value;
-        
-        const deleteBtn = document.createElement('button');
-        deleteBtn.textContent = '🗑 Delete';
-        deleteBtn.onclick = () => {
-            tempPlayers.splice(index, 1);
-            renderTempPlayers();
-        };
-        
-        item.appendChild(input);
-        item.appendChild(deleteBtn);
-        container.appendChild(item);
-    });
-}
-
-function addPlayerFromModal() {
-    const name = document.getElementById('new-player-name').value.trim();
-    if (!name) return;
-    
-    tempPlayers.push({
-        name: name,
-        totalTime: 0,
-        onField: false,
-        sessionStart: null,
-        lastTimestamp: null,
-        rotationLog: []
-    });
-    
-    document.getElementById('new-player-name').value = '';
-    renderTempPlayers();
-}
-
-function savePlayersFromModal() {
-    // Filter out empty names
-    tempPlayers = tempPlayers.filter(player => player.name.trim() !== '');
-    teams[currentTeam] = tempPlayers;
-    
-    saveTeams();
-    renderPlayerCards();
-    updateCaptainOptions();
-    updateGoaltenderOptions();
-    closeManageModal();
-}
-
-function closeManageModal() {
-    document.getElementById('manage-modal').style.display = 'none';
-}
-
-// Share functionality
-function showShareModal() {
-    if (!currentTeam) {
-        alert('Please select a team first');
-        return;
-    }
-    
-    // Reset checkboxes to default (only events selected)
-    document.getElementById('share-times').checked = false;
-    document.getElementById('share-rotation').checked = false;
-    document.getElementById('share-events').checked = true;
-    document.getElementById('share-quarters').checked = false;
-    
-    document.getElementById('share-modal').style.display = 'block';
-}
-
-function selectAllShareOptions() {
-    document.getElementById('share-times').checked = true;
-    document.getElementById('share-rotation').checked = true;
-    document.getElementById('share-events').checked = true;
-    document.getElementById('share-quarters').checked = true;
-}
-
-function deselectAllShareOptions() {
-    document.getElementById('share-times').checked = false;
-    document.getElementById('share-rotation').checked = false;
-    document.getElementById('share-events').checked = false;
-    document.getElementById('share-quarters').checked = false;
-}
-
-function generateAndCopyShareUrl() {
-    if (!currentTeam) return;
-    
-    const shareData = {
-        teamName: currentTeam,
-        team: teams[currentTeam] // Players always included
-    };
-    
-    // Add optional data based on selections
-    if (document.getElementById('share-times').checked) {
-        // Include player times but clear session data for sharing
-        shareData.team = shareData.team.map(player => ({
-            ...player,
-            sessionStart: null,
-            lastTimestamp: null
-        }));
-    } else {
-        // Remove times but keep player structure
-        shareData.team = shareData.team.map(player => ({
-            name: player.name,
-            totalTime: 0,
-            onField: false,
-            sessionStart: null,
-            lastTimestamp: null,
-            rotationLog: []
-        }));
-    }
-    
-    if (document.getElementById('share-rotation').checked) {
-        // Rotation log is already included in team data
-    } else {
-        // Clear rotation logs
-        shareData.team = shareData.team.map(player => ({
-            ...player,
-            rotationLog: []
-        }));
-    }
-    
-    if (document.getElementById('share-events').checked) {
-        shareData.events = events[currentTeam] || [];
-    }
-    
-    if (document.getElementById('share-quarters').checked) {
-        shareData.quarterClocks = teamQuarterClocks[currentTeam] || { Q1: 0, Q2: 0, Q3: 0, Q4: 0, OT: 0 };
-    }
-    
-    // Create compressed share URL
-    const compressed = compressData(JSON.stringify(shareData));
-    const encodedData = encodeURIComponent(compressed);
-    const shareUrl = `${window.location.origin}${window.location.pathname}?data=${encodedData}`;
-    
-    // Copy to clipboard
-    navigator.clipboard.writeText(shareUrl).then(() => {
-        alert('Share link copied to clipboard!');
-        closeShareModal();
-    }).catch(() => {
-        // Fallback for older browsers
-        const textArea = document.createElement('textarea');
-        textArea.value = shareUrl;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        alert('Share link copied to clipboard!');
-        closeShareModal();
-    });
-}
-
-function closeShareModal() {
-    document.getElementById('share-modal').style.display = 'none';
-}
-
-function compressData(jsonString) {
-    // Simple compression by removing unnecessary whitespace and shortening keys
-    const compressed = jsonString
-        .replace(/\s+/g, '')  // Remove all whitespace
-        .replace(/"name":/g, '"n":')
-        .replace(/"totalTime":/g, '"t":')
-        .replace(/"onField":/g, '"o":')
-        .replace(/"sessionStart":/g, '"s":')
-        .replace(/"lastTimestamp":/g, '"l":')
-        .replace(/"rotationLog":/g, '"r":')
-        .replace(/"player":/g, '"p":')
-        .replace(/"team":/g, '"tm":')
-        .replace(/"time":/g, '"ti":')
-        .replace(/"quarter":/g, '"q":')
-        .replace(/"timestamp":/g, '"ts":')
-        .replace(/"type":/g, '"tp":')
-        .replace(/"teamName":/g, '"tn":')
-        .replace(/"events":/g, '"ev":')
-        .replace(/"quarterClocks":/g, '"qc":');
-    
-    return btoa(compressed);
-}
-
-function decompressData(compressedData) {
-    try {
-        const compressed = atob(compressedData);
-        // Restore the original keys
-        const restored = compressed
-            .replace(/"n":/g, '"name":')
-            .replace(/"t":/g, '"totalTime":')
-            .replace(/"o":/g, '"onField":')
-            .replace(/"s":/g, '"sessionStart":')
-            .replace(/"l":/g, '"lastTimestamp":')
-            .replace(/"r":/g, '"rotationLog":')
-            .replace(/"p":/g, '"player":')
-            .replace(/"tm":/g, '"team":')
-            .replace(/"ti":/g, '"time":')
-            .replace(/"q":/g, '"quarter":')
-            .replace(/"ts":/g, '"timestamp":')
-            .replace(/"tp":/g, '"type":')
-            .replace(/"tn":/g, '"teamName":')
-            .replace(/"ev":/g, '"events":')
-            .replace(/"qc":/g, '"quarterClocks":');
-        
-        return JSON.parse(restored);
-    } catch (e) {
-        console.error('Decompression failed:', e);
-        return null;
-    }
-}
-
-// Reset functions
-function showResetWarning() {
-    if (!currentTeam) {
-        alert('Please select a team first');
-        return;
-    }
-    document.getElementById('reset-warning-modal').style.display = 'block';
-}
-
-function closeResetWarning() {
-    document.getElementById('reset-warning-modal').style.display = 'none';
-}
-
-function confirmReset() {
-    if (!currentTeam) return;
-    
-    // Reset all player times and logs
-    teams[currentTeam].forEach(player => {
-        player.totalTime = 0;
-        player.onField = false;
-        player.sessionStart = null;
-        player.lastTimestamp = null;
-        player.rotationLog = [];
-    });
-    
-    // Reset events
-    if (events[currentTeam]) {
-        events[currentTeam] = [];
-    }
-    
-    // Reset quarter clocks for this team
-    if (teamQuarterClocks[currentTeam]) {
-        teamQuarterClocks[currentTeam] = { Q1: 0, Q2: 0, Q3: 0, Q4: 0, OT: 0 };
-    }
-    
-    // Stop any running timers
-    if (quarterTimerInterval) {
-        clearInterval(quarterTimerInterval);
-        quarterTimerInterval = null;
-    }
-    
-    // Clear persistent state
-    quarterClockState = { isRunning: false, startTime: null, elapsedTime: 0 };
-    localStorage.removeItem('quarterClockState');
-    
-    saveTeams();
-    saveEvents();
-    saveTeamQuarterClocks();
-    updatePlayerDisplay();
-    renderRotationLog();
-    renderEventsLog();
-    updateScoreDisplay();
-    updateQuarterClock();
-    closeResetWarning();
-}
-
-// Import/Export functions
-function checkForImportData() {
-    const urlParams = new URLSearchParams(window.location.search);
-    let importData = urlParams.get('data') || urlParams.get('import'); // Support both old and new format
-    
-    if (importData) {
-        try {
-            let teamData;
-            
-            // Try new compressed format first
-            if (urlParams.get('data')) {
-                teamData = decompressData(decodeURIComponent(importData));
-            }
-            
-            // Fallback to old format
-            if (!teamData && urlParams.get('import')) {
-                teamData = JSON.parse(atob(importData));
-            }
-            
-            if (teamData) {
-                pendingImportData = teamData;
-                document.getElementById('import-modal').style.display = 'block';
-            } else {
-                throw new Error('Invalid data format');
-            }
-        } catch (e) {
-            console.error('Invalid import data:', e);
-            alert('Invalid or corrupted share link. Please ask for a new link.');
-            // Remove the import parameter
-            const url = new URL(window.location);
-            url.searchParams.delete('import');
-            url.searchParams.delete('data');
-            window.history.replaceState({}, '', url);
-        }
-    }
-}
-
-function confirmImport() {
-    if (!pendingImportData) return;
-    
-    const { team, events: importedEvents, quarterClocks, teamName } = pendingImportData;
-    
-    // Import team data
-    teams[teamName] = team;
-    if (importedEvents) {
-        events[teamName] = importedEvents;
-    }
-    
-    // Import quarter clocks if available
-    if (quarterClocks) {
-        teamQuarterClocks[teamName] = quarterClocks;
-    }
-    
-    // Update UI
-    updateTeamOptions();
-    
-    // Select the imported team
-    document.getElementById('team-select').value = teamName;
-    loadSelectedTeam();
-    
-    saveTeams();
-    saveEvents();
-    saveTeamQuarterClocks();
-    
-    // Clear import data and URL
-    pendingImportData = null;
-    const url = new URL(window.location);
-    url.searchParams.delete('import');
-    url.searchParams.delete('data');
-    window.history.replaceState({}, '', url);
-    
-    document.getElementById('import-modal').style.display = 'none';
-    alert(`Team "${teamName}" imported successfully!`);
-}
-
-function cancelImport() {
-    pendingImportData = null;
-    // Remove import parameter from URL
-    const url = new URL(window.location);
-    url.searchParams.delete('import');
-    url.searchParams.delete('data');
-    window.history.replaceState({}, '', url);
-    
-    document.getElementById('import-modal').style.display = 'none';
-}
-
-// Storage functions
-function saveTeams() {
-    try {
-        localStorage.setItem('soccerTeams', JSON.stringify(teams));
-    } catch (e) {
-        console.error('Error saving teams:', e);
-    }
-}
-
-function saveEvents() {
-    try {
-        localStorage.setItem('soccerEvents', JSON.stringify(events));
-    } catch (e) {
-        console.error('Error saving events:', e);
-    }
-}
-
-function saveTeamQuarterClocks() {
-    try {
-        localStorage.setItem('teamQuarterClocks', JSON.stringify(teamQuarterClocks));
-    } catch (e) {
-        console.error('Error saving quarter clocks:', e);
-    }
-}
-
-function loadTeams() {
-    try {
-        const saved = localStorage.getItem('soccerTeams');
-        if (saved) {
-            teams = JSON.parse(saved);
-            updateTeamOptions();
-            
-            // Load previously selected team
-            const savedTeam = localStorage.getItem('selectedTeam');
-            if (savedTeam && teams[savedTeam]) {
-                document.getElementById('team-select').value = savedTeam;
-                loadSelectedTeam();
-            }
-        }
-    } catch (e) {
-        console.error('Error loading teams:', e);
-        teams = {};
-    }
-}
-
-function loadEvents() {
-    try {
-        const saved = localStorage.getItem('soccerEvents');
-        if (saved) {
-            events = JSON.parse(saved);
-        }
-    } catch (e) {
-        console.error('Error loading events:', e);
-        events = {};
-    }
-}
-
-function loadTeamQuarterClocks() {
-    try {
-        const saved = localStorage.getItem('teamQuarterClocks');
-        if (saved) {
-            teamQuarterClocks = JSON.parse(saved);
-        }
-    } catch (e) {
-        console.error('Error loading quarter clocks:', e);
-        teamQuarterClocks = {};
-    }
-}
-
-function loadUserPreferences() {
-    // Load sound setting
-    const savedSound = localStorage.getItem('soundEnabled');
-    if (savedSound !== null) {
-        soundEnabled = JSON.parse(savedSound);
-        document.getElementById('sound-status').textContent = soundEnabled ? '🔊' : '🔇';
-    }
-    
-    // Load controls collapsed state
-    const savedCollapsed = localStorage.getItem('controlsCollapsed');
-    if (savedCollapsed !== null) {
-        controlsCollapsed = JSON.parse(savedCollapsed);
-        const content = document.getElementById('collapsible-content');
-        const toggle = document.getElementById('collapse-toggle');
-        
-        if (controlsCollapsed) {
-            content.classList.add('collapsed');
-            toggle.textContent = '🔽';
-        }
-    }
-    
-    // Load rotation history collapsed state
-    const savedRotationCollapsed = localStorage.getItem('rotationHistoryCollapsed');
-    if (savedRotationCollapsed !== null) {
-        rotationHistoryCollapsed = JSON.parse(savedRotationCollapsed);
-    }
-    
-    // Apply rotation history collapsed state
-    const rotationContent = document.getElementById('rotation-log');
-    const rotationToggle = document.getElementById('rotation-toggle');
-    
-    if (rotationHistoryCollapsed) {
-        rotationContent.classList.add('collapsed');
-        rotationToggle.textContent = '🔽';
-    } else {
-        rotationContent.classList.remove('collapsed');
-        rotationToggle.textContent = '🔼';
-    }
-}
-
-// Initialize app
-document.addEventListener('DOMContentLoaded', () => {
-    loadTeams();
-    loadEvents();
-    loadTeamQuarterClocks();
-    loadUserPreferences();
-    checkForImportData();
-    updateQuarterClock();
-    initializeQuarterButtons();
-    
-    // Handle new player name input enter key
-    document.getElementById('new-player-name').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            addPlayerFromModal();
-        }
-    });
-});
-
-// Close modals when clicking outside
-window.addEventListener('click', (e) => {
-    const modals = document.querySelectorAll('.modal');
-    modals.forEach(modal => {
-        if (e.target === modal) {
-            modal.style.display = 'none';
-        }
-    });
-});;
     }
     
     teamEvents.forEach((event, index) => {
@@ -1460,20 +884,506 @@ function renderEventsLog() {
     
     if (teamEvents.length === 0) {
         container.innerHTML = '<p>No events recorded yet.</p>';
-        return// Global variables
-let teams = {};
-let currentTeam = '';
-let tempPlayers = [];
-let teamQuarterClocks = {};
-let quarterTimerInterval = null;
-let quarterStartTime = null;
-let currentQuarter = 'Q1';
-let events = [];
-let soundEnabled = true;
-let updateInterval = null;
-let controlsCollapsed = false;
-let rotationHistoryCollapsed = true;
+        return;
+    }
+    
+    const table = document.createElement('table');
+    table.innerHTML = `
+        <tr>
+            <th>Event</th>
+            <th>Player</th>
+            <th>Team</th>
+            <th>Quarter</th>
+            <th>Time</th>
+        </tr>
+    `;
+    
+    const eventTypeMap = {
+        goal: '⚽ Goal',
+        penalty: '🚨 Penalty Point',
+        save: '🛡️ Goal Prevented',
+        injury: '🤕 Player Injury',
+        cleat: '👟 Lost Cleat',
+        laces: '👟 Untied Laces',
+        headbutt: '🤕 Ball Head-butt'
+    };
+    
+    teamEvents.forEach(event => {
+        const row = table.insertRow();
+        const teamName = event.team === 'team' ? currentTeam : 'Other Team';
+        row.innerHTML = `
+            <td>${eventTypeMap[event.type]}</td>
+            <td>${event.player}</td>
+            <td>${teamName}</td>
+            <td>${event.quarter}</td>
+            <td>${event.time}</td>
+        `;
+    });
+    
+    container.appendChild(table);
+}
 
-// Event modal state
-let eventModalMode = 'add'; // 'add', 'edit', 'log'
-let editingEventIndex =
+function showManagePlayersModal() {
+    if (!currentTeam) {
+        alert('Please select a team first');
+        return;
+    }
+    
+    tempPlayers = JSON.parse(JSON.stringify(teams[currentTeam]));
+    renderTempPlayers();
+    document.getElementById('manage-modal').style.display = 'block';
+}
+
+function renderTempPlayers() {
+    const container = document.getElementById('player-list');
+    container.innerHTML = '';
+    
+    tempPlayers.forEach((player, index) => {
+        const item = document.createElement('div');
+        item.className = 'player-item';
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = player.name;
+        input.onchange = (e) => tempPlayers[index].name = e.target.value;
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = '🗑 Delete';
+        deleteBtn.onclick = () => {
+            tempPlayers.splice(index, 1);
+            renderTempPlayers();
+        };
+        
+        item.appendChild(input);
+        item.appendChild(deleteBtn);
+        container.appendChild(item);
+    });
+}
+
+function addPlayerFromModal() {
+    const name = document.getElementById('new-player-name').value.trim();
+    if (!name) return;
+    
+    tempPlayers.push({
+        name: name,
+        totalTime: 0,
+        onField: false,
+        sessionStart: null,
+        lastTimestamp: null,
+        rotationLog: []
+    });
+    
+    document.getElementById('new-player-name').value = '';
+    renderTempPlayers();
+}
+
+function savePlayersFromModal() {
+    tempPlayers = tempPlayers.filter(player => player.name.trim() !== '');
+    teams[currentTeam] = tempPlayers;
+    
+    saveTeams();
+    renderPlayerCards();
+    updateCaptainOptions();
+    updateGoaltenderOptions();
+    closeManageModal();
+}
+
+function closeManageModal() {
+    document.getElementById('manage-modal').style.display = 'none';
+}
+
+function showShareModal() {
+    if (!currentTeam) {
+        alert('Please select a team first');
+        return;
+    }
+    
+    document.getElementById('share-times').checked = false;
+    document.getElementById('share-rotation').checked = false;
+    document.getElementById('share-events').checked = true;
+    document.getElementById('share-quarters').checked = false;
+    
+    document.getElementById('share-modal').style.display = 'block';
+}
+
+function selectAllShareOptions() {
+    document.getElementById('share-times').checked = true;
+    document.getElementById('share-rotation').checked = true;
+    document.getElementById('share-events').checked = true;
+    document.getElementById('share-quarters').checked = true;
+}
+
+function deselectAllShareOptions() {
+    document.getElementById('share-times').checked = false;
+    document.getElementById('share-rotation').checked = false;
+    document.getElementById('share-events').checked = false;
+    document.getElementById('share-quarters').checked = false;
+}
+
+function generateAndCopyShareUrl() {
+    if (!currentTeam) return;
+    
+    const shareData = {
+        teamName: currentTeam,
+        team: teams[currentTeam]
+    };
+    
+    if (document.getElementById('share-times').checked) {
+        shareData.team = shareData.team.map(player => ({
+            ...player,
+            sessionStart: null,
+            lastTimestamp: null
+        }));
+    } else {
+        shareData.team = shareData.team.map(player => ({
+            name: player.name,
+            totalTime: 0,
+            onField: false,
+            sessionStart: null,
+            lastTimestamp: null,
+            rotationLog: []
+        }));
+    }
+    
+    if (document.getElementById('share-rotation').checked) {
+        // Rotation log is already included in team data
+    } else {
+        shareData.team = shareData.team.map(player => ({
+            ...player,
+            rotationLog: []
+        }));
+    }
+    
+    if (document.getElementById('share-events').checked) {
+        shareData.events = events[currentTeam] || [];
+    }
+    
+    if (document.getElementById('share-quarters').checked) {
+        shareData.quarterClocks = teamQuarterClocks[currentTeam] || { Q1: 0, Q2: 0, Q3: 0, Q4: 0, OT: 0 };
+    }
+    
+    const compressed = compressData(JSON.stringify(shareData));
+    const encodedData = encodeURIComponent(compressed);
+    const shareUrl = `${window.location.origin}${window.location.pathname}?data=${encodedData}`;
+    
+    navigator.clipboard.writeText(shareUrl).then(() => {
+        alert('Share link copied to clipboard!');
+        closeShareModal();
+    }).catch(() => {
+        const textArea = document.createElement('textarea');
+        textArea.value = shareUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert('Share link copied to clipboard!');
+        closeShareModal();
+    });
+}
+
+function closeShareModal() {
+    document.getElementById('share-modal').style.display = 'none';
+}
+
+function compressData(jsonString) {
+    const compressed = jsonString
+        .replace(/\s+/g, '')
+        .replace(/"name":/g, '"n":')
+        .replace(/"totalTime":/g, '"t":')
+        .replace(/"onField":/g, '"o":')
+        .replace(/"sessionStart":/g, '"s":')
+        .replace(/"lastTimestamp":/g, '"l":')
+        .replace(/"rotationLog":/g, '"r":')
+        .replace(/"player":/g, '"p":')
+        .replace(/"team":/g, '"tm":')
+        .replace(/"time":/g, '"ti":')
+        .replace(/"quarter":/g, '"q":')
+        .replace(/"timestamp":/g, '"ts":')
+        .replace(/"type":/g, '"tp":')
+        .replace(/"teamName":/g, '"tn":')
+        .replace(/"events":/g, '"ev":')
+        .replace(/"quarterClocks":/g, '"qc":');
+    
+    return btoa(compressed);
+}
+
+function decompressData(compressedData) {
+    try {
+        const compressed = atob(compressedData);
+        const restored = compressed
+            .replace(/"n":/g, '"name":')
+            .replace(/"t":/g, '"totalTime":')
+            .replace(/"o":/g, '"onField":')
+            .replace(/"s":/g, '"sessionStart":')
+            .replace(/"l":/g, '"lastTimestamp":')
+            .replace(/"r":/g, '"rotationLog":')
+            .replace(/"p":/g, '"player":')
+            .replace(/"tm":/g, '"team":')
+            .replace(/"ti":/g, '"time":')
+            .replace(/"q":/g, '"quarter":')
+            .replace(/"ts":/g, '"timestamp":')
+            .replace(/"tp":/g, '"type":')
+            .replace(/"tn":/g, '"teamName":')
+            .replace(/"ev":/g, '"events":')
+            .replace(/"qc":/g, '"quarterClocks":');
+        
+        return JSON.parse(restored);
+    } catch (e) {
+        console.error('Decompression failed:', e);
+        return null;
+    }
+}
+
+function showResetWarning() {
+    if (!currentTeam) {
+        alert('Please select a team first');
+        return;
+    }
+    document.getElementById('reset-warning-modal').style.display = 'block';
+}
+
+function closeResetWarning() {
+    document.getElementById('reset-warning-modal').style.display = 'none';
+}
+
+function confirmReset() {
+    if (!currentTeam) return;
+    
+    teams[currentTeam].forEach(player => {
+        player.totalTime = 0;
+        player.onField = false;
+        player.sessionStart = null;
+        player.lastTimestamp = null;
+        player.rotationLog = [];
+    });
+    
+    if (events[currentTeam]) {
+        events[currentTeam] = [];
+    }
+    
+    if (teamQuarterClocks[currentTeam]) {
+        teamQuarterClocks[currentTeam] = { Q1: 0, Q2: 0, Q3: 0, Q4: 0, OT: 0 };
+    }
+    
+    if (quarterTimerInterval) {
+        clearInterval(quarterTimerInterval);
+        quarterTimerInterval = null;
+    }
+    
+    quarterClockState = { isRunning: false, startTime: null, elapsedTime: 0 };
+    localStorage.removeItem('quarterClockState');
+    
+    saveTeams();
+    saveEvents();
+    saveTeamQuarterClocks();
+    updatePlayerDisplay();
+    renderRotationLog();
+    renderEventsLog();
+    updateScoreDisplay();
+    updateQuarterClock();
+    closeResetWarning();
+}
+
+function checkForImportData() {
+    const urlParams = new URLSearchParams(window.location.search);
+    let importData = urlParams.get('data') || urlParams.get('import');
+    
+    if (importData) {
+        try {
+            let teamData;
+            
+            if (urlParams.get('data')) {
+                teamData = decompressData(decodeURIComponent(importData));
+            }
+            
+            if (!teamData && urlParams.get('import')) {
+                teamData = JSON.parse(atob(importData));
+            }
+            
+            if (teamData) {
+                pendingImportData = teamData;
+                document.getElementById('import-modal').style.display = 'block';
+            } else {
+                throw new Error('Invalid data format');
+            }
+        } catch (e) {
+            console.error('Invalid import data:', e);
+            alert('Invalid or corrupted share link. Please ask for a new link.');
+            const url = new URL(window.location);
+            url.searchParams.delete('import');
+            url.searchParams.delete('data');
+            window.history.replaceState({}, '', url);
+        }
+    }
+}
+
+function confirmImport() {
+    if (!pendingImportData) return;
+    
+    const { team, events: importedEvents, quarterClocks, teamName } = pendingImportData;
+    
+    teams[teamName] = team;
+    if (importedEvents) {
+        events[teamName] = importedEvents;
+    }
+    
+    if (quarterClocks) {
+        teamQuarterClocks[teamName] = quarterClocks;
+    }
+    
+    updateTeamOptions();
+    
+    document.getElementById('team-select').value = teamName;
+    loadSelectedTeam();
+    
+    saveTeams();
+    saveEvents();
+    saveTeamQuarterClocks();
+    
+    pendingImportData = null;
+    const url = new URL(window.location);
+    url.searchParams.delete('import');
+    url.searchParams.delete('data');
+    window.history.replaceState({}, '', url);
+    
+    document.getElementById('import-modal').style.display = 'none';
+    alert(`Team "${teamName}" imported successfully!`);
+}
+
+function cancelImport() {
+    pendingImportData = null;
+    const url = new URL(window.location);
+    url.searchParams.delete('import');
+    url.searchParams.delete('data');
+    window.history.replaceState({}, '', url);
+    
+    document.getElementById('import-modal').style.display = 'none';
+}
+
+function saveTeams() {
+    try {
+        localStorage.setItem('soccerTeams', JSON.stringify(teams));
+    } catch (e) {
+        console.error('Error saving teams:', e);
+    }
+}
+
+function saveEvents() {
+    try {
+        localStorage.setItem('soccerEvents', JSON.stringify(events));
+    } catch (e) {
+        console.error('Error saving events:', e);
+    }
+}
+
+function saveTeamQuarterClocks() {
+    try {
+        localStorage.setItem('teamQuarterClocks', JSON.stringify(teamQuarterClocks));
+    } catch (e) {
+        console.error('Error saving quarter clocks:', e);
+    }
+}
+
+function loadTeams() {
+    try {
+        const saved = localStorage.getItem('soccerTeams');
+        if (saved) {
+            teams = JSON.parse(saved);
+            updateTeamOptions();
+            
+            const savedTeam = localStorage.getItem('selectedTeam');
+            if (savedTeam && teams[savedTeam]) {
+                document.getElementById('team-select').value = savedTeam;
+                loadSelectedTeam();
+            }
+        }
+    } catch (e) {
+        console.error('Error loading teams:', e);
+        teams = {};
+    }
+}
+
+function loadEvents() {
+    try {
+        const saved = localStorage.getItem('soccerEvents');
+        if (saved) {
+            events = JSON.parse(saved);
+        }
+    } catch (e) {
+        console.error('Error loading events:', e);
+        events = {};
+    }
+}
+
+function loadTeamQuarterClocks() {
+    try {
+        const saved = localStorage.getItem('teamQuarterClocks');
+        if (saved) {
+            teamQuarterClocks = JSON.parse(saved);
+        }
+    } catch (e) {
+        console.error('Error loading quarter clocks:', e);
+        teamQuarterClocks = {};
+    }
+}
+
+function loadUserPreferences() {
+    const savedSound = localStorage.getItem('soundEnabled');
+    if (savedSound !== null) {
+        soundEnabled = JSON.parse(savedSound);
+        document.getElementById('sound-status').textContent = soundEnabled ? '🔊' : '🔇';
+    }
+    
+    const savedCollapsed = localStorage.getItem('controlsCollapsed');
+    if (savedCollapsed !== null) {
+        controlsCollapsed = JSON.parse(savedCollapsed);
+        const content = document.getElementById('collapsible-content');
+        const toggle = document.getElementById('collapse-toggle');
+        
+        if (controlsCollapsed) {
+            content.classList.add('collapsed');
+            toggle.textContent = '🔽';
+        }
+    }
+    
+    const savedRotationCollapsed = localStorage.getItem('rotationHistoryCollapsed');
+    if (savedRotationCollapsed !== null) {
+        rotationHistoryCollapsed = JSON.parse(savedRotationCollapsed);
+    }
+    
+    const rotationContent = document.getElementById('rotation-log');
+    const rotationToggle = document.getElementById('rotation-toggle');
+    
+    if (rotationHistoryCollapsed) {
+        rotationContent.classList.add('collapsed');
+        rotationToggle.textContent = '🔽';
+    } else {
+        rotationContent.classList.remove('collapsed');
+        rotationToggle.textContent = '🔼';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadTeams();
+    loadEvents();
+    loadTeamQuarterClocks();
+    loadUserPreferences();
+    checkForImportData();
+    updateQuarterClock();
+    initializeQuarterButtons();
+    
+    document.getElementById('new-player-name').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            addPlayerFromModal();
+        }
+    });
+});
+
+window.addEventListener('click', (e) => {
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modal => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+});
