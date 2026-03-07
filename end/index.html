@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>End of Season Awards | Soccer Timer</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f0f0f0;
+            color: #333;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .header h1 { font-size: 1.6em; margin-bottom: 5px; }
+        .header p { opacity: 0.8; font-size: 0.9em; }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .card h3 {
+            color: #667eea;
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .url-inputs { display: flex; flex-direction: column; gap: 8px; }
+        .url-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .url-row input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-family: 'Courier New', monospace;
+            transition: border-color 0.3s;
+        }
+        .url-row input:focus { outline: none; border-color: #667eea; }
+        .remove-btn {
+            background: linear-gradient(135deg, #f857a6 0%, #ff5858 100%);
+            color: white;
+            border: none;
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        .remove-btn:hover { opacity: 0.9; }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        button:active { transform: translateY(0); }
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .btn-row button { flex: 1; }
+        .add-btn {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        .generate-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .status {
+            margin-top: 12px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            display: none;
+        }
+        .status.success { display: block; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.error { display: block; background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+        /* Results */
+        .results { display: none; }
+        .results.visible { display: block; }
+        .team-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .team-banner h2 { font-size: 1.8em; margin-bottom: 5px; }
+        .team-banner .season-record {
+            font-size: 1.2em;
+            opacity: 0.9;
+            margin-top: 8px;
+        }
+        .award-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .award-icon {
+            font-size: 2.5em;
+            flex-shrink: 0;
+            width: 60px;
+            text-align: center;
+        }
+        .award-details { flex: 1; }
+        .award-title {
+            font-size: 0.85em;
+            color: #667eea;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .award-player {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin: 2px 0;
+        }
+        .award-stat {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .games-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .games-table th, .games-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        .games-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .games-table tr:nth-child(even) { background: #f8f9fa; }
+        .result-win { color: #28a745; font-weight: bold; }
+        .result-loss { color: #dc3545; font-weight: bold; }
+        .result-draw { color: #ffc107; font-weight: bold; }
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .stats-table th, .stats-table td {
+            border: 1px solid #ddd;
+            padding: 8px 10px;
+            text-align: center;
+        }
+        .stats-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 0.85em;
+        }
+        .stats-table td:first-child { text-align: left; font-weight: 600; }
+        .stats-table tr:nth-child(even) { background: #f8f9fa; }
+        .highlight { background: #fff9c4 !important; }
+        .share-section {
+            text-align: center;
+            margin-top: 15px;
+        }
+        .share-btn {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            padding: 14px 30px;
+            font-size: 1.1em;
+        }
+        @media (max-width: 600px) {
+            .award-card { flex-direction: column; text-align: center; }
+            .award-icon { width: auto; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>End of Season Awards</h1>
+        <p>Paste your game share links to generate season stats</p>
+    </div>
+
+    <div class="container">
+        <!-- Input Section -->
+        <div id="input-section">
+            <div class="card">
+                <h3>Game Share Links</h3>
+                <p style="margin-bottom: 12px; color: #666; font-size: 0.9em;">
+                    Paste share URLs from each game (v3 or v4 format). One link per game.
+                </p>
+                <div class="url-inputs" id="url-inputs">
+                    <div class="url-row">
+                        <input type="text" placeholder="Paste game 1 share link..." class="game-url">
+                        <button class="remove-btn" onclick="removeUrlRow(this)" title="Remove">✕</button>
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <button class="add-btn" onclick="addUrlRow()">+ Add Another Game</button>
+                    <button class="generate-btn" onclick="generateReport()">Generate Report</button>
+                </div>
+                <div id="input-status" class="status"></div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results" id="results">
+            <div class="team-banner" id="team-banner">
+                <h2 id="banner-team"></h2>
+                <div class="season-record" id="banner-record"></div>
+            </div>
+
+            <div class="card">
+                <h3>Season Awards</h3>
+                <div id="awards-list"></div>
+            </div>
+
+            <div class="card">
+                <h3>Game Results</h3>
+                <div id="games-list"></div>
+            </div>
+
+            <div class="card">
+                <h3>Full Player Stats</h3>
+                <div id="player-stats"></div>
+            </div>
+
+            <div class="share-section">
+                <button class="share-btn" onclick="shareResults()">🔗 Share Season Report</button>
+            </div>
+
+            <div style="text-align: center; margin-top: 10px;">
+                <button onclick="showInputSection()" style="background: none; color: #667eea; box-shadow: none; text-decoration: underline; padding: 8px;">
+                    ← Back to Input
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const BASE_URL = 'https://soccer.philipjewell.com';
+
+    // ===== v3 decompression =====
+    function decompressV3(encoded) {
+        try {
+            const compressed = atob(encoded);
+            const restored = compressed
+                .replace(/"n":/g, '"name":')
+                .replace(/"t":/g, '"totalTime":')
+                .replace(/"o":/g, '"onField":')
+                .replace(/"s":/g, '"sessionStart":')
+                .replace(/"l":/g, '"lastTimestamp":')
+                .replace(/"r":/g, '"rotationLog":')
+                .replace(/"p":/g, '"player":')
+                .replace(/"tm":/g, '"team":')
+                .replace(/"ti":/g, '"time":')
+                .replace(/"q":/g, '"quarter":')
+                .replace(/"ts":/g, '"timestamp":')
+                .replace(/"tp":/g, '"type":')
+                .replace(/"tn":/g, '"teamName":')
+                .replace(/"ev":/g, '"events":')
+                .replace(/"qc":/g, '"quarterClocks":');
+            return JSON.parse(restored);
+        } catch (e) { return null; }
+    }
+
+    // ===== v4 decompression =====
+    function decompressV4(encoded) {
+        try {
+            const compressed = atob(encoded);
+            const restored = compressed
+                .replace(/"tn":/g, '"teamName":')
+                .replace(/"ro":/g, '"roster":')
+                .replace(/"rh":/g, '"rotation_history":')
+                .replace(/"eh":/g, '"event_history":')
+                .replace(/"ge":/g, '"gameclock_elapsed":')
+                .replace(/"ct":/g, '"controls":')
+                .replace(/"rt":/g, '"rotation_time":')
+                .replace(/"nf":/g, '"notifications":')
+                .replace(/"ft":/g, '"field_time":')
+                .replace(/"ic":/g, '"is_captain":')
+                .replace(/"ig":/g, '"is_goalkeeper":')
+                .replace(/"et":/g, '"event_type":')
+                .replace(/"p":/g, '"player":')
+                .replace(/"q":/g, '"quarter":')
+                .replace(/"ti":/g, '"time_in":')
+                .replace(/"to":/g, '"time_out":')
+                .replace(/"d":/g, '"duration":')
+                .replace(/"ts":/g, '"timestamp":')
+                .replace(/"n":/g, '"name":')
+                .replace(/"tm":/g, '"time":')
+                .replace(/"te":/g, '"team":');
+            return JSON.parse(restored);
+        } catch (e) { return null; }
+    }
+
+    // ===== Parse any share URL into normalized game data =====
+    function parseShareUrl(url) {
+        let dataParam;
+        try {
+            const parsed = new URL(url.trim());
+            dataParam = parsed.searchParams.get('data') || parsed.searchParams.get('import');
+        } catch (e) {
+            // Maybe just the data param value
+            dataParam = url.trim();
+        }
+
+        if (!dataParam) return null;
+
+        const encoded = decodeURIComponent(dataParam);
+
+        // Try v4
+        let data = decompressV4(encoded);
+        if (data && (data.roster || data.event_history)) {
+            return normalizeV4(data);
+        }
+
+        // Try v3
+        data = decompressV3(encoded);
+        if (data && (data.team || data.teamName)) {
+            return normalizeV3(data);
+        }
+
+        // Try plain base64
+        try {
+            data = JSON.parse(atob(encoded));
+            if (data.roster || data.event_history) return normalizeV4(data);
+            if (data.team || data.events) return normalizeV3(data);
+        } catch (e) { /* ignore */ }
+
+        return null;
+    }
+
+    function normalizeV3(data) {
+        const events = (data.events || []).map(e => ({
+            event_type: e.type,
+            player: e.player,
+            team: e.team,
+            quarter: e.quarter,
+            time: e.time,
+            timestamp: e.timestamp
+        }));
+
+        const players = (data.team || []).map(p => p.name);
+
+        return {
+            teamName: data.teamName,
+            players: players,
+            events: events
+        };
+    }
+
+    function normalizeV4(data) {
+        const players = (data.roster || []).map(p => p.name);
+        const events = data.event_history || [];
+
+        return {
+            teamName: data.teamName,
+            players: players,
+            events: events
+        };
+    }
+
+    // ===== Stats computation =====
+
+    function computeSeasonStats(games) {
+        const teamName = games[0]?.teamName || 'Team';
+
+        // All unique players across all games (our team only)
+        const allPlayers = new Set();
+        games.forEach(g => g.players.forEach(p => allPlayers.add(p)));
+
+        // Stat categories for our team's players
+        const statKeys = ['goal', 'penalty', 'save', 'injury', 'cleat', 'laces', 'headbutt'];
+        const playerStats = {};
+        allPlayers.forEach(name => {
+            playerStats[name] = {};
+            statKeys.forEach(k => playerStats[name][k] = 0);
+        });
+
+        // Game results
+        const gameResults = [];
+
+        games.forEach((game, idx) => {
+            let teamScore = 0;
+            let otherScore = 0;
+            let earliestTimestamp = Infinity;
+
+            game.events.forEach(event => {
+                if (event.timestamp && event.timestamp < earliestTimestamp) {
+                    earliestTimestamp = event.timestamp;
+                }
+
+                const isScoring = event.event_type === 'goal' || event.event_type === 'penalty';
+
+                if (isScoring) {
+                    if (event.team === 'team') teamScore++;
+                    else if (event.team === 'other') otherScore++;
+                }
+
+                // Only count stats for our team's players
+                if (event.team === 'team' && event.player && playerStats[event.player] !== undefined) {
+                    if (playerStats[event.player][event.event_type] !== undefined) {
+                        playerStats[event.player][event.event_type]++;
+                    }
+                }
+
+                // Goals scored by our players (even if tracked differently)
+                if (event.event_type === 'goal' && event.team === 'team' && event.player) {
+                    // Check if player is known
+                    const knownName = [...allPlayers].find(p => event.player === p);
+                    if (knownName && playerStats[knownName]) {
+                        // Already counted above if team === 'team'
+                    }
+                }
+            });
+
+            const gameDate = earliestTimestamp < Infinity
+                ? new Date(earliestTimestamp)
+                : null;
+
+            let result;
+            if (teamScore > otherScore) result = 'W';
+            else if (teamScore < otherScore) result = 'L';
+            else result = 'D';
+
+            gameResults.push({
+                index: idx + 1,
+                date: gameDate,
+                teamScore,
+                otherScore,
+                result,
+                teamName: game.teamName
+            });
+        });
+
+        // Sort games by date
+        gameResults.sort((a, b) => {
+            if (a.date && b.date) return a.date - b.date;
+            if (a.date) return -1;
+            if (b.date) return 1;
+            return a.index - b.index;
+        });
+
+        // Season record
+        const wins = gameResults.filter(g => g.result === 'W').length;
+        const losses = gameResults.filter(g => g.result === 'L').length;
+        const draws = gameResults.filter(g => g.result === 'D').length;
+        const totalGoalsFor = gameResults.reduce((s, g) => s + g.teamScore, 0);
+        const totalGoalsAgainst = gameResults.reduce((s, g) => s + g.otherScore, 0);
+
+        // Compute awards
+        const awards = computeAwards(playerStats, statKeys);
+
+        // Player stats array sorted by goals desc
+        const playerStatsArray = Object.entries(playerStats)
+            .map(([name, stats]) => ({ name, ...stats }))
+            .sort((a, b) => (b.goal + b.penalty) - (a.goal + a.penalty));
+
+        return {
+            teamName,
+            games: gameResults,
+            record: { wins, losses, draws, goalsFor: totalGoalsFor, goalsAgainst: totalGoalsAgainst },
+            awards,
+            playerStats: playerStatsArray
+        };
+    }
+
+    function computeAwards(playerStats, statKeys) {
+        const awards = [];
+
+        const awardDefs = [
+            { key: 'goal', icon: '⚽', title: 'Golden Boot - Top Goal Scorer', statLabel: 'goals' },
+            { key: 'save', icon: '🛡️', title: 'Brick Wall - Most Goals Prevented', statLabel: 'saves' },
+            { key: 'penalty', icon: '🚨', title: 'Penalty King - Most Penalty Points', statLabel: 'penalty points' },
+            { key: 'injury', icon: '🤕', title: 'Tough Cookie - Most Injuries', statLabel: 'injuries' },
+            { key: 'cleat', icon: '👟', title: 'Cinderella Award - Most Cleats Lost', statLabel: 'cleats lost' },
+            { key: 'laces', icon: '🎀', title: 'Loose Laces Award - Most Untied Laces', statLabel: 'times' },
+            { key: 'headbutt', icon: '🤯', title: 'Headbanger - Most Ball Head-butts', statLabel: 'head-butts' }
+        ];
+
+        awardDefs.forEach(def => {
+            let maxCount = 0;
+            let winners = [];
+
+            Object.entries(playerStats).forEach(([name, stats]) => {
+                const count = stats[def.key] || 0;
+                if (count > maxCount) {
+                    maxCount = count;
+                    winners = [name];
+                } else if (count === maxCount && count > 0) {
+                    winners.push(name);
+                }
+            });
+
+            if (maxCount > 0) {
+                awards.push({
+                    icon: def.icon,
+                    title: def.title,
+                    players: winners,
+                    count: maxCount,
+                    statLabel: def.statLabel
+                });
+            }
+        });
+
+        return awards;
+    }
+
+    // ===== URL Row Management =====
+
+    function addUrlRow() {
+        const container = document.getElementById('url-inputs');
+        const count = container.querySelectorAll('.url-row').length + 1;
+        const row = document.createElement('div');
+        row.className = 'url-row';
+        row.innerHTML = `
+            <input type="text" placeholder="Paste game ${count} share link..." class="game-url">
+            <button class="remove-btn" onclick="removeUrlRow(this)" title="Remove">✕</button>
+        `;
+        container.appendChild(row);
+        row.querySelector('input').focus();
+    }
+
+    function removeUrlRow(btn) {
+        const container = document.getElementById('url-inputs');
+        if (container.querySelectorAll('.url-row').length <= 1) return;
+        btn.closest('.url-row').remove();
+        // Renumber placeholders
+        container.querySelectorAll('.game-url').forEach((input, i) => {
+            input.placeholder = `Paste game ${i + 1} share link...`;
+        });
+    }
+
+    // ===== Report Generation =====
+
+    function generateReport() {
+        const inputs = document.querySelectorAll('.game-url');
+        const urls = [];
+        inputs.forEach(input => {
+            const val = input.value.trim();
+            if (val) urls.push(val);
+        });
+
+        if (urls.length === 0) {
+            showStatus('input-status', 'Please paste at least one share link.', true);
+            return;
+        }
+
+        const games = [];
+        const errors = [];
+
+        urls.forEach((url, i) => {
+            const game = parseShareUrl(url);
+            if (game) {
+                games.push(game);
+            } else {
+                errors.push(`Game ${i + 1}: Could not parse share link`);
+            }
+        });
+
+        if (games.length === 0) {
+            showStatus('input-status', 'Could not parse any of the share links. Check format and try again.', true);
+            return;
+        }
+
+        if (errors.length > 0) {
+            showStatus('input-status', `Parsed ${games.length} of ${urls.length} games. Skipped: ${errors.join('; ')}`, false);
+        } else {
+            hideStatus('input-status');
+        }
+
+        const stats = computeSeasonStats(games);
+        renderResults(stats);
+    }
+
+    // ===== Render Results =====
+
+    function renderResults(stats) {
+        // Banner
+        document.getElementById('banner-team').textContent = stats.teamName;
+        const r = stats.record;
+        document.getElementById('banner-record').innerHTML =
+            `${r.wins}W - ${r.losses}L - ${r.draws}D &nbsp;|&nbsp; Goals: ${r.goalsFor} scored, ${r.goalsAgainst} conceded &nbsp;|&nbsp; ${stats.games.length} game${stats.games.length !== 1 ? 's' : ''}`;
+
+        // Awards
+        const awardsContainer = document.getElementById('awards-list');
+        awardsContainer.innerHTML = '';
+
+        if (stats.awards.length === 0) {
+            awardsContainer.innerHTML = '<p style="color: #666;">No individual awards to display.</p>';
+        } else {
+            stats.awards.forEach(award => {
+                const card = document.createElement('div');
+                card.className = 'award-card';
+                const playerText = award.players.join(' & ');
+                card.innerHTML = `
+                    <div class="award-icon">${award.icon}</div>
+                    <div class="award-details">
+                        <div class="award-title">${award.title}</div>
+                        <div class="award-player">${playerText}</div>
+                        <div class="award-stat">${award.count} ${award.statLabel}</div>
+                    </div>
+                `;
+                awardsContainer.appendChild(card);
+            });
+        }
+
+        // Games table
+        const gamesContainer = document.getElementById('games-list');
+        if (stats.games.length === 0) {
+            gamesContainer.innerHTML = '<p>No games to display.</p>';
+        } else {
+            let html = `<table class="games-table">
+                <tr>
+                    <th>#</th>
+                    <th>Date</th>
+                    <th>Score</th>
+                    <th>Result</th>
+                </tr>`;
+
+            stats.games.forEach((game, i) => {
+                const dateStr = game.date
+                    ? game.date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+                    : 'Unknown';
+
+                const resultClass = game.result === 'W' ? 'result-win'
+                    : game.result === 'L' ? 'result-loss' : 'result-draw';
+                const resultText = game.result === 'W' ? 'Win'
+                    : game.result === 'L' ? 'Loss' : 'Draw';
+
+                html += `<tr>
+                    <td>${i + 1}</td>
+                    <td>${dateStr}</td>
+                    <td>${game.teamScore} - ${game.otherScore}</td>
+                    <td class="${resultClass}">${resultText}</td>
+                </tr>`;
+            });
+
+            html += '</table>';
+            gamesContainer.innerHTML = html;
+        }
+
+        // Player stats table
+        const statsContainer = document.getElementById('player-stats');
+        if (stats.playerStats.length === 0) {
+            statsContainer.innerHTML = '<p>No player stats to display.</p>';
+        } else {
+            // Find max in each column for highlighting
+            const maxes = {};
+            ['goal', 'penalty', 'save', 'injury', 'cleat', 'laces', 'headbutt'].forEach(key => {
+                maxes[key] = Math.max(...stats.playerStats.map(p => p[key] || 0));
+            });
+
+            let html = `<table class="stats-table">
+                <tr>
+                    <th>Player</th>
+                    <th>⚽ Goals</th>
+                    <th>🚨 Penalties</th>
+                    <th>🛡️ Saves</th>
+                    <th>🤕 Injuries</th>
+                    <th>👟 Cleats</th>
+                    <th>🎀 Laces</th>
+                    <th>🤯 Headers</th>
+                </tr>`;
+
+            stats.playerStats.forEach(player => {
+                const cells = ['goal', 'penalty', 'save', 'injury', 'cleat', 'laces', 'headbutt'].map(key => {
+                    const val = player[key] || 0;
+                    const isMax = val > 0 && val === maxes[key];
+                    return `<td class="${isMax ? 'highlight' : ''}">${val}</td>`;
+                }).join('');
+
+                html += `<tr><td>${player.name}</td>${cells}</tr>`;
+            });
+
+            html += '</table>';
+            statsContainer.innerHTML = html;
+        }
+
+        // Show results, hide input
+        document.getElementById('input-section').style.display = 'none';
+        document.getElementById('results').classList.add('visible');
+
+        // Update page title
+        document.title = `${stats.teamName} Season Report | Soccer Timer`;
+
+        // Store stats for sharing
+        window._currentStats = stats;
+    }
+
+    // ===== Share Results =====
+
+    function shareResults() {
+        const stats = window._currentStats;
+        if (!stats) return;
+
+        // Build a compact shareable payload
+        const payload = {
+            t: stats.teamName,
+            r: stats.record,
+            g: stats.games.map(g => ({
+                d: g.date ? g.date.getTime() : null,
+                s: g.teamScore,
+                o: g.otherScore,
+                w: g.result
+            })),
+            a: stats.awards.map(a => ({
+                i: a.icon,
+                l: a.title,
+                p: a.players,
+                c: a.count,
+                s: a.statLabel
+            })),
+            p: stats.playerStats.map(p => ({
+                n: p.name,
+                g: p.goal,
+                pe: p.penalty,
+                s: p.save,
+                in: p.injury,
+                c: p.cleat,
+                la: p.laces,
+                h: p.headbutt
+            }))
+        };
+
+        const encoded = btoa(JSON.stringify(payload));
+        const shareUrl = `${BASE_URL}/end/?report=${encodeURIComponent(encoded)}`;
+
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            alert('Season report link copied to clipboard!');
+        }).catch(() => {
+            const textArea = document.createElement('textarea');
+            textArea.value = shareUrl;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert('Season report link copied to clipboard!');
+        });
+    }
+
+    // ===== Load Shared Report =====
+
+    function checkForSharedReport() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const reportParam = urlParams.get('report');
+        if (!reportParam) return false;
+
+        try {
+            const payload = JSON.parse(atob(decodeURIComponent(reportParam)));
+
+            const stats = {
+                teamName: payload.t,
+                record: payload.r,
+                games: payload.g.map((g, i) => ({
+                    index: i + 1,
+                    date: g.d ? new Date(g.d) : null,
+                    teamScore: g.s,
+                    otherScore: g.o,
+                    result: g.w
+                })),
+                awards: payload.a.map(a => ({
+                    icon: a.i,
+                    title: a.l,
+                    players: a.p,
+                    count: a.c,
+                    statLabel: a.s
+                })),
+                playerStats: payload.p.map(p => ({
+                    name: p.n,
+                    goal: p.g,
+                    penalty: p.pe,
+                    save: p.s,
+                    injury: p.in,
+                    cleat: p.c,
+                    laces: p.la,
+                    headbutt: p.h
+                }))
+            };
+
+            renderResults(stats);
+            return true;
+        } catch (e) {
+            console.error('Failed to load shared report:', e);
+            return false;
+        }
+    }
+
+    // ===== UI Helpers =====
+
+    function showStatus(elementId, message, isError) {
+        const el = document.getElementById(elementId);
+        el.textContent = message;
+        el.className = 'status ' + (isError ? 'error' : 'success');
+    }
+
+    function hideStatus(elementId) {
+        const el = document.getElementById(elementId);
+        el.className = 'status';
+        el.style.display = 'none';
+    }
+
+    function showInputSection() {
+        document.getElementById('input-section').style.display = 'block';
+        document.getElementById('results').classList.remove('visible');
+        document.title = 'End of Season Awards | Soccer Timer';
+    }
+
+    // ===== Init =====
+    document.addEventListener('DOMContentLoaded', () => {
+        // If a shared report is in the URL, render it directly
+        if (!checkForSharedReport()) {
+            // Otherwise show the input form
+            document.getElementById('input-section').style.display = 'block';
+        }
+    });
+    </script>
+</body>
+</html>
