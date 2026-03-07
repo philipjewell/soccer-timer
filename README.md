@@ -1,5 +1,9 @@
 # Soccer Timer
 
+[![Version](https://img.shields.io/badge/version-v4-blue)](https://github.com/philipjewell/soccer-timer/tree/main/v4)
+[![Deployed on](https://img.shields.io/badge/deployed%20on-Cloudflare%20Pages-F38020?logo=cloudflare&logoColor=white)](https://pages.cloudflare.com)
+[![Last Commit](https://img.shields.io/github/last-commit/philipjewell/soccer-timer/main)](https://github.com/philipjewell/soccer-timer/commits/main)
+
 I know what you're thinking: this isn't an original idea. There are so many other apps that allow coaches to manager their youth soccer teams - allowing them to log the time on the field, elect subsitutions, etc.
 You are 100% right.
 
