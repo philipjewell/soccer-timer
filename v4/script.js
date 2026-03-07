@@ -823,6 +823,7 @@ function showEventModal() {
 }
 
 function showAddEventModal() {
+    closeManageEventsModal();
     eventModalMode = 'add';
     setupEventModal();
     document.getElementById('event-modal').style.display = 'block';
