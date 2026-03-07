@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soccer Timer - Share Link Converter</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f0f0f0;
+            color: #333;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .header h1 { font-size: 1.5em; margin-bottom: 5px; }
+        .header p { opacity: 0.8; font-size: 0.9em; }
+        .container {
+            max-width: 700px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .card h3 {
+            color: #667eea;
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.95em;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            min-height: 80px;
+            transition: border-color 0.3s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .version-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin: 12px 0;
+        }
+        .version-row label { margin-bottom: 0; flex-shrink: 0; }
+        select {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            background: white;
+        }
+        .arrow {
+            font-size: 1.5em;
+            color: #667eea;
+            flex-shrink: 0;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        button:active { transform: translateY(0); }
+        .copy-btn {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            margin-top: 10px;
+        }
+        .status {
+            margin-top: 12px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            display: none;
+        }
+        .status.success {
+            display: block;
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            display: block;
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .preview {
+            margin-top: 12px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 0.85em;
+            display: none;
+            word-break: break-word;
+        }
+        .preview.visible { display: block; }
+        .preview h4 { color: #667eea; margin-bottom: 8px; }
+        .preview-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 4px 12px;
+        }
+        .preview-grid .label { font-weight: 600; color: #555; }
+        .detected {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        .detected.v3 { background: #fff3cd; color: #856404; }
+        .detected.v4 { background: #d4edda; color: #155724; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Share Link Converter</h1>
+        <p>Convert share links between Soccer Timer versions</p>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h3>Input</h3>
+            <label for="input-url">Paste a share link or data parameter:</label>
+            <textarea id="input-url" placeholder="https://soccer.philipjewell.com/v3/?data=... or just the data= value"></textarea>
+            <div id="detect-status" class="status"></div>
+            <div id="preview" class="preview">
+                <h4>Detected Data</h4>
+                <div id="preview-content" class="preview-grid"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Convert</h3>
+            <div class="version-row">
+                <label>From:</label>
+                <select id="from-version">
+                    <option value="auto">Auto-detect</option>
+                    <option value="v3">v3</option>
+                    <option value="v4">v4</option>
+                </select>
+                <span class="arrow">&rarr;</span>
+                <label>To:</label>
+                <select id="to-version">
+                    <option value="v4">v4</option>
+                    <option value="v3">v3</option>
+                </select>
+            </div>
+            <button onclick="convert()">Convert</button>
+        </div>
+
+        <div class="card" id="output-card" style="display:none;">
+            <h3>Output</h3>
+            <div id="convert-status" class="status"></div>
+            <textarea id="output-url" readonly></textarea>
+            <button class="copy-btn" onclick="copyOutput()">Copy to Clipboard</button>
+        </div>
+    </div>
+
+    <script>
+    const BASE_URL = 'https://soccer.philipjewell.com';
+
+    // ===== v3 compression =====
+
+    function compressV3(jsonString) {
+        const compressed = jsonString
+            .replace(/\s+/g, '')
+            .replace(/"name":/g, '"n":')
+            .replace(/"totalTime":/g, '"t":')
+            .replace(/"onField":/g, '"o":')
+            .replace(/"sessionStart":/g, '"s":')
+            .replace(/"lastTimestamp":/g, '"l":')
+            .replace(/"rotationLog":/g, '"r":')
+            .replace(/"player":/g, '"p":')
+            .replace(/"team":/g, '"tm":')
+            .replace(/"time":/g, '"ti":')
+            .replace(/"quarter":/g, '"q":')
+            .replace(/"timestamp":/g, '"ts":')
+            .replace(/"type":/g, '"tp":')
+            .replace(/"teamName":/g, '"tn":')
+            .replace(/"events":/g, '"ev":')
+            .replace(/"quarterClocks":/g, '"qc":');
+        return btoa(compressed);
+    }
+
+    function decompressV3(encoded) {
+        try {
+            const compressed = atob(encoded);
+            const restored = compressed
+                .replace(/"n":/g, '"name":')
+                .replace(/"t":/g, '"totalTime":')
+                .replace(/"o":/g, '"onField":')
+                .replace(/"s":/g, '"sessionStart":')
+                .replace(/"l":/g, '"lastTimestamp":')
+                .replace(/"r":/g, '"rotationLog":')
+                .replace(/"p":/g, '"player":')
+                .replace(/"tm":/g, '"team":')
+                .replace(/"ti":/g, '"time":')
+                .replace(/"q":/g, '"quarter":')
+                .replace(/"ts":/g, '"timestamp":')
+                .replace(/"tp":/g, '"type":')
+                .replace(/"tn":/g, '"teamName":')
+                .replace(/"ev":/g, '"events":')
+                .replace(/"qc":/g, '"quarterClocks":');
+            return JSON.parse(restored);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // ===== v4 compression =====
+
+    function compressV4(jsonString) {
+        const compressed = jsonString
+            .replace(/\s+/g, '')
+            .replace(/"teamName":/g, '"tn":')
+            .replace(/"roster":/g, '"ro":')
+            .replace(/"rotation_history":/g, '"rh":')
+            .replace(/"event_history":/g, '"eh":')
+            .replace(/"gameclock_elapsed":/g, '"ge":')
+            .replace(/"controls":/g, '"ct":')
+            .replace(/"rotation_time":/g, '"rt":')
+            .replace(/"notifications":/g, '"nf":')
+            .replace(/"field_time":/g, '"ft":')
+            .replace(/"is_captain":/g, '"ic":')
+            .replace(/"is_goalkeeper":/g, '"ig":')
+            .replace(/"event_type":/g, '"et":')
+            .replace(/"player":/g, '"p":')
+            .replace(/"quarter":/g, '"q":')
+            .replace(/"time_in":/g, '"ti":')
+            .replace(/"time_out":/g, '"to":')
+            .replace(/"duration":/g, '"d":')
+            .replace(/"timestamp":/g, '"ts":')
+            .replace(/"name":/g, '"n":')
+            .replace(/"time":/g, '"tm":')
+            .replace(/"team":/g, '"te":');
+        return btoa(compressed);
+    }
+
+    function decompressV4(encoded) {
+        try {
+            const compressed = atob(encoded);
+            const restored = compressed
+                .replace(/"tn":/g, '"teamName":')
+                .replace(/"ro":/g, '"roster":')
+                .replace(/"rh":/g, '"rotation_history":')
+                .replace(/"eh":/g, '"event_history":')
+                .replace(/"ge":/g, '"gameclock_elapsed":')
+                .replace(/"ct":/g, '"controls":')
+                .replace(/"rt":/g, '"rotation_time":')
+                .replace(/"nf":/g, '"notifications":')
+                .replace(/"ft":/g, '"field_time":')
+                .replace(/"ic":/g, '"is_captain":')
+                .replace(/"ig":/g, '"is_goalkeeper":')
+                .replace(/"et":/g, '"event_type":')
+                .replace(/"p":/g, '"player":')
+                .replace(/"q":/g, '"quarter":')
+                .replace(/"ti":/g, '"time_in":')
+                .replace(/"to":/g, '"time_out":')
+                .replace(/"d":/g, '"duration":')
+                .replace(/"ts":/g, '"timestamp":')
+                .replace(/"n":/g, '"name":')
+                .replace(/"tm":/g, '"time":')
+                .replace(/"te":/g, '"team":');
+            return JSON.parse(restored);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // ===== Data extraction =====
+
+    function extractDataParam(input) {
+        input = input.trim();
+
+        // Try as full URL
+        try {
+            const url = new URL(input);
+            const data = url.searchParams.get('data') || url.searchParams.get('import');
+            if (data) return decodeURIComponent(data);
+        } catch (e) { /* not a URL */ }
+
+        // Try as just the data param value (possibly URI-encoded)
+        try {
+            const decoded = decodeURIComponent(input);
+            if (decoded !== input && atob(decoded)) return decoded;
+        } catch (e) { /* ignore */ }
+
+        // Assume raw base64
+        return input;
+    }
+
+    function detectVersion(input) {
+        input = input.trim();
+
+        // Check URL path for version hint
+        const pathMatch = input.match(/\/(v\d)\//);
+        if (pathMatch) return pathMatch[1];
+
+        // Try to decode and detect by structure
+        const encoded = extractDataParam(input);
+
+        const v4Data = decompressV4(encoded);
+        if (v4Data && (v4Data.roster || v4Data.event_history)) return 'v4';
+
+        const v3Data = decompressV3(encoded);
+        if (v3Data && (v3Data.team || v3Data.teamName)) return 'v3';
+
+        // Try plain base64 JSON
+        try {
+            const plain = JSON.parse(atob(encoded));
+            if (plain.roster || plain.event_history) return 'v4';
+            if (plain.team || plain.events) return 'v3';
+        } catch (e) { /* ignore */ }
+
+        return null;
+    }
+
+    function decodeInput(encoded, version) {
+        if (version === 'v3') {
+            return decompressV3(encoded) || (() => {
+                try { return JSON.parse(atob(encoded)); } catch (e) { return null; }
+            })();
+        }
+        if (version === 'v4') {
+            return decompressV4(encoded) || (() => {
+                try { return JSON.parse(atob(encoded)); } catch (e) { return null; }
+            })();
+        }
+        return null;
+    }
+
+    // ===== Conversion logic =====
+
+    function v3ToV4(v3Data) {
+        const v4Share = {
+            teamName: v3Data.teamName,
+            controls: { rotation_time: 5, notifications: true },
+            roster: (v3Data.team || []).map(p => ({
+                name: p.name,
+                is_captain: false,
+                is_goalkeeper: false,
+                field_time: p.totalTime || 0
+            }))
+        };
+
+        // Convert per-player rotation logs to flat list
+        const rotations = [];
+        (v3Data.team || []).forEach(p => {
+            (p.rotationLog || []).forEach(log => {
+                rotations.push({
+                    player: p.name,
+                    quarter: log.quarter || '',
+                    time_in: log.in,
+                    time_out: log.out,
+                    duration: log.duration
+                });
+            });
+        });
+        if (rotations.length > 0) {
+            v4Share.rotation_history = rotations;
+        }
+
+        // Convert events
+        if (v3Data.events && v3Data.events.length > 0) {
+            v4Share.event_history = v3Data.events.map(e => ({
+                event_type: e.type,
+                player: e.player,
+                team: e.team,
+                quarter: e.quarter,
+                time: e.time,
+                timestamp: e.timestamp
+            }));
+        }
+
+        // Convert quarter clocks
+        if (v3Data.quarterClocks) {
+            v4Share.gameclock_elapsed = v3Data.quarterClocks;
+        }
+
+        return v4Share;
+    }
+
+    function v4ToV3(v4Data) {
+        const v3Share = {
+            teamName: v4Data.teamName
+        };
+
+        // Convert roster to v3 team array
+        v3Share.team = (v4Data.roster || []).map(p => {
+            const player = {
+                name: p.name,
+                totalTime: p.field_time || 0,
+                onField: false,
+                sessionStart: null,
+                lastTimestamp: null,
+                rotationLog: []
+            };
+
+            // Attach rotation history entries to matching players
+            if (v4Data.rotation_history) {
+                v4Data.rotation_history.forEach(r => {
+                    if (r.player === p.name) {
+                        player.rotationLog.push({
+                            in: r.time_in,
+                            out: r.time_out,
+                            duration: r.duration,
+                            quarter: r.quarter
+                        });
+                    }
+                });
+            }
+
+            return player;
+        });
+
+        // Convert events
+        if (v4Data.event_history && v4Data.event_history.length > 0) {
+            v3Share.events = v4Data.event_history.map(e => ({
+                type: e.event_type,
+                player: e.player,
+                team: e.team,
+                quarter: e.quarter,
+                time: e.time,
+                timestamp: e.timestamp
+            }));
+        }
+
+        // Convert quarter clocks
+        if (v4Data.gameclock_elapsed) {
+            v3Share.quarterClocks = v4Data.gameclock_elapsed;
+        }
+
+        return v3Share;
+    }
+
+    // ===== UI =====
+
+    function showStatus(elementId, message, isError) {
+        const el = document.getElementById(elementId);
+        el.textContent = message;
+        el.className = 'status ' + (isError ? 'error' : 'success');
+    }
+
+    function hideStatus(elementId) {
+        document.getElementById(elementId).style.display = 'none';
+        document.getElementById(elementId).className = 'status';
+    }
+
+    function showPreview(data, version) {
+        const preview = document.getElementById('preview');
+        const content = document.getElementById('preview-content');
+
+        const teamName = data.teamName || 'Unknown';
+        let playerCount = 0;
+        let eventCount = 0;
+        let players = [];
+
+        if (version === 'v3') {
+            playerCount = (data.team || []).length;
+            eventCount = (data.events || []).length;
+            players = (data.team || []).map(p => p.name);
+        } else {
+            playerCount = (data.roster || []).length;
+            eventCount = (data.event_history || []).length;
+            players = (data.roster || []).map(p => p.name);
+        }
+
+        content.innerHTML = `
+            <span class="label">Team:</span><span>${teamName}</span>
+            <span class="label">Players (${playerCount}):</span><span>${players.join(', ') || 'None'}</span>
+            <span class="label">Events:</span><span>${eventCount}</span>
+        `;
+
+        preview.classList.add('visible');
+    }
+
+    // Auto-detect on input change
+    document.getElementById('input-url').addEventListener('input', function() {
+        const input = this.value.trim();
+        hideStatus('detect-status');
+        document.getElementById('preview').classList.remove('visible');
+
+        if (!input) return;
+
+        const version = detectVersion(input);
+        if (version) {
+            showStatus('detect-status', 'Detected: ' + version.toUpperCase() + ' share link', false);
+            document.getElementById('from-version').value = version;
+
+            // Auto-set "to" to the other version
+            if (version === 'v3') document.getElementById('to-version').value = 'v4';
+            else if (version === 'v4') document.getElementById('to-version').value = 'v3';
+
+            // Show preview
+            const encoded = extractDataParam(input);
+            const data = decodeInput(encoded, version);
+            if (data) showPreview(data, version);
+        } else {
+            showStatus('detect-status', 'Could not detect version. Please select manually.', true);
+        }
+    });
+
+    function convert() {
+        const input = document.getElementById('input-url').value.trim();
+        if (!input) {
+            showStatus('convert-status', 'Please paste a share link first.', true);
+            document.getElementById('output-card').style.display = 'block';
+            return;
+        }
+
+        let fromVersion = document.getElementById('from-version').value;
+        const toVersion = document.getElementById('to-version').value;
+
+        // Auto-detect if needed
+        if (fromVersion === 'auto') {
+            fromVersion = detectVersion(input);
+            if (!fromVersion) {
+                showStatus('convert-status', 'Could not auto-detect the input version. Please select manually.', true);
+                document.getElementById('output-card').style.display = 'block';
+                return;
+            }
+        }
+
+        if (fromVersion === toVersion) {
+            showStatus('convert-status', 'Input and output versions are the same. No conversion needed.', true);
+            document.getElementById('output-card').style.display = 'block';
+            return;
+        }
+
+        // Decode input
+        const encoded = extractDataParam(input);
+        const data = decodeInput(encoded, fromVersion);
+
+        if (!data) {
+            showStatus('convert-status', 'Failed to decode the share link. Check the input and version selection.', true);
+            document.getElementById('output-card').style.display = 'block';
+            return;
+        }
+
+        // Convert
+        let converted;
+        let compressedOutput;
+        let outputPath;
+
+        if (fromVersion === 'v3' && toVersion === 'v4') {
+            converted = v3ToV4(data);
+            compressedOutput = compressV4(JSON.stringify(converted));
+            outputPath = '/v4/';
+        } else if (fromVersion === 'v4' && toVersion === 'v3') {
+            converted = v4ToV3(data);
+            compressedOutput = compressV3(JSON.stringify(converted));
+            outputPath = '/v3/';
+        } else {
+            showStatus('convert-status', 'Unsupported conversion: ' + fromVersion + ' to ' + toVersion, true);
+            document.getElementById('output-card').style.display = 'block';
+            return;
+        }
+
+        const outputUrl = BASE_URL + outputPath + '?data=' + encodeURIComponent(compressedOutput);
+
+        document.getElementById('output-url').value = outputUrl;
+        showStatus('convert-status', 'Converted from ' + fromVersion.toUpperCase() + ' to ' + toVersion.toUpperCase() + ' successfully!', false);
+        document.getElementById('output-card').style.display = 'block';
+    }
+
+    function copyOutput() {
+        const output = document.getElementById('output-url');
+        output.select();
+        navigator.clipboard.writeText(output.value).then(() => {
+            const btn = document.querySelector('.copy-btn');
+            btn.textContent = 'Copied!';
+            setTimeout(() => btn.textContent = 'Copy to Clipboard', 2000);
+        }).catch(() => {
+            document.execCommand('copy');
+        });
+    }
+    </script>
+</body>
+</html>
