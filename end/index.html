@@ -798,7 +798,7 @@
             }))
         };
 
-        const encoded = btoa(JSON.stringify(payload));
+        const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
         const shareUrl = `${BASE_URL}/end/?report=${encodeURIComponent(encoded)}`;
 
         navigator.clipboard.writeText(shareUrl).then(() => {
@@ -822,7 +822,7 @@
         if (!reportParam) return false;
 
         try {
-            const payload = JSON.parse(atob(decodeURIComponent(reportParam)));
+            const payload = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(reportParam)))));
 
             const stats = {
                 teamName: payload.t,
