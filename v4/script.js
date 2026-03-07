@@ -1535,6 +1535,8 @@ function checkForImportData() {
         }
 
         if (parsed) {
+            let previewTeamName, previewEvents;
+
             if (isV3) {
                 const converted = convertV3Import(parsed);
                 pendingImportData = {
@@ -1542,9 +1544,26 @@ function checkForImportData() {
                     teamData: converted.teamData,
                     isV3: true
                 };
+                previewTeamName = converted.teamName;
+                previewEvents = converted.teamData.event_history || [];
             } else {
                 pendingImportData = { raw: parsed };
+                previewTeamName = parsed.teamName;
+                previewEvents = parsed.event_history || [];
             }
+
+            // Update page title with incoming share data
+            if (previewTeamName) {
+                const teamScore = previewEvents.filter(e =>
+                    (e.event_type === 'goal' || e.event_type === 'penalty') && e.team === 'team'
+                ).length;
+                const otherScore = previewEvents.filter(e =>
+                    (e.event_type === 'goal' || e.event_type === 'penalty') && e.team === 'other'
+                ).length;
+                document.title = `${teamScore}:${otherScore} ${previewTeamName} | Soccer Timer`;
+                document.getElementById('team-title').textContent = `${previewTeamName} Time Tracker`;
+            }
+
             document.getElementById('import-modal').style.display = 'block';
         } else {
             throw new Error('Invalid data format');
