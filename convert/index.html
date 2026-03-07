@@ -142,6 +142,7 @@
             font-weight: 600;
             margin-left: 8px;
         }
+        .detected.v2 { background: #cce5ff; color: #004085; }
         .detected.v3 { background: #fff3cd; color: #856404; }
         .detected.v4 { background: #d4edda; color: #155724; }
     </style>
@@ -170,6 +171,7 @@
                 <label>From:</label>
                 <select id="from-version">
                     <option value="auto">Auto-detect</option>
+                    <option value="v2">v2</option>
                     <option value="v3">v3</option>
                     <option value="v4">v4</option>
                 </select>
@@ -178,6 +180,7 @@
                 <select id="to-version">
                     <option value="v4">v4</option>
                     <option value="v3">v3</option>
+                    <option value="v2">v2</option>
                 </select>
             </div>
             <button onclick="convert()">Convert</button>
@@ -193,6 +196,50 @@
 
     <script>
     const BASE_URL = 'https://soccer.philipjewell.com';
+
+    // ===== v2 compression =====
+
+    function compressV2(jsonString) {
+        const compressed = jsonString
+            .replace(/\s+/g, '')
+            .replace(/"name":/g, '"n":')
+            .replace(/"totalTime":/g, '"t":')
+            .replace(/"onField":/g, '"o":')
+            .replace(/"sessionStart":/g, '"s":')
+            .replace(/"lastTimestamp":/g, '"l":')
+            .replace(/"rotationLog":/g, '"r":')
+            .replace(/"scorer":/g, '"sc":')
+            .replace(/"team":/g, '"tm":')
+            .replace(/"time":/g, '"ti":')
+            .replace(/"quarter":/g, '"q":')
+            .replace(/"timestamp":/g, '"ts":')
+            .replace(/"teamName":/g, '"tn":')
+            .replace(/"quarterClocks":/g, '"qc":');
+        return btoa(compressed);
+    }
+
+    function decompressV2(encoded) {
+        try {
+            const compressed = atob(encoded);
+            const restored = compressed
+                .replace(/"n":/g, '"name":')
+                .replace(/"t":/g, '"totalTime":')
+                .replace(/"o":/g, '"onField":')
+                .replace(/"s":/g, '"sessionStart":')
+                .replace(/"l":/g, '"lastTimestamp":')
+                .replace(/"r":/g, '"rotationLog":')
+                .replace(/"sc":/g, '"scorer":')
+                .replace(/"tm":/g, '"team":')
+                .replace(/"ti":/g, '"time":')
+                .replace(/"q":/g, '"quarter":')
+                .replace(/"ts":/g, '"timestamp":')
+                .replace(/"tn":/g, '"teamName":')
+                .replace(/"qc":/g, '"quarterClocks":');
+            return JSON.parse(restored);
+        } catch (e) {
+            return null;
+        }
+    }
 
     // ===== v3 compression =====
 
@@ -337,20 +384,42 @@
         const v4Data = decompressV4(encoded);
         if (v4Data && (v4Data.roster || v4Data.event_history)) return 'v4';
 
+        // Try v3 first (has events with type/player)
         const v3Data = decompressV3(encoded);
-        if (v3Data && (v3Data.team || v3Data.teamName)) return 'v3';
+        if (v3Data && v3Data.teamName) {
+            if (v3Data.events) return 'v3';
+        }
+
+        // Try v2 (has goals with scorer)
+        const v2Data = decompressV2(encoded);
+        if (v2Data && v2Data.teamName) {
+            if (v2Data.goals) return 'v2';
+            // v2 and v3 share similar compression for team data;
+            // if no events or goals, check for team array (could be either)
+            if (v2Data.team && !v2Data.events) return 'v2';
+        }
+
+        // If v3 decoded but had no events, it's still valid v3 (team-only share)
+        if (v3Data && v3Data.teamName && v3Data.team) return 'v3';
 
         // Try plain base64 JSON
         try {
             const plain = JSON.parse(atob(encoded));
             if (plain.roster || plain.event_history) return 'v4';
-            if (plain.team || plain.events) return 'v3';
+            if (plain.events) return 'v3';
+            if (plain.goals) return 'v2';
+            if (plain.team) return 'v3';
         } catch (e) { /* ignore */ }
 
         return null;
     }
 
     function decodeInput(encoded, version) {
+        if (version === 'v2') {
+            return decompressV2(encoded) || (() => {
+                try { return JSON.parse(atob(encoded)); } catch (e) { return null; }
+            })();
+        }
         if (version === 'v3') {
             return decompressV3(encoded) || (() => {
                 try { return JSON.parse(atob(encoded)); } catch (e) { return null; }
@@ -468,6 +537,86 @@
         return v3Share;
     }
 
+    function v2ToV3(v2Data) {
+        const v3Share = {
+            teamName: v2Data.teamName
+        };
+
+        // Copy team array (same structure)
+        v3Share.team = (v2Data.team || []).map(p => ({
+            name: p.name,
+            totalTime: p.totalTime || 0,
+            onField: p.onField || false,
+            sessionStart: p.sessionStart || null,
+            lastTimestamp: p.lastTimestamp || null,
+            rotationLog: p.rotationLog || []
+        }));
+
+        // Convert goals to events
+        if (v2Data.goals && v2Data.goals.length > 0) {
+            v3Share.events = v2Data.goals.map(g => ({
+                type: 'goal',
+                player: g.scorer,
+                team: g.team,
+                quarter: g.quarter,
+                time: g.time,
+                timestamp: g.timestamp
+            }));
+        }
+
+        if (v2Data.quarterClocks) {
+            v3Share.quarterClocks = v2Data.quarterClocks;
+        }
+
+        return v3Share;
+    }
+
+    function v2ToV4(v2Data) {
+        // Convert v2 → v3 first, then v3 → v4
+        return v3ToV4(v2ToV3(v2Data));
+    }
+
+    function v3ToV2(v3Data) {
+        const v2Share = {
+            teamName: v3Data.teamName
+        };
+
+        // Copy team array
+        v2Share.team = (v3Data.team || []).map(p => ({
+            name: p.name,
+            totalTime: p.totalTime || 0,
+            onField: p.onField || false,
+            sessionStart: p.sessionStart || null,
+            lastTimestamp: p.lastTimestamp || null,
+            rotationLog: p.rotationLog || []
+        }));
+
+        // Convert events to goals (only goal-type events)
+        const goalEvents = (v3Data.events || []).filter(e => e.type === 'goal');
+        if (goalEvents.length > 0) {
+            v2Share.goals = goalEvents.map(e => ({
+                scorer: e.player,
+                team: e.team,
+                quarter: e.quarter,
+                time: e.time,
+                timestamp: e.timestamp
+            }));
+        } else {
+            v2Share.goals = [];
+        }
+
+        if (v3Data.quarterClocks) {
+            v2Share.quarterClocks = v3Data.quarterClocks;
+        }
+
+        return v2Share;
+    }
+
+    function v4ToV2(v4Data) {
+        // Convert v4 → v3 first, then v3 → v2
+        return v3ToV2(v4ToV3(v4Data));
+    }
+
     // ===== UI =====
 
     function showStatus(elementId, message, isError) {
@@ -490,7 +639,11 @@
         let eventCount = 0;
         let players = [];
 
-        if (version === 'v3') {
+        if (version === 'v2') {
+            playerCount = (data.team || []).length;
+            eventCount = (data.goals || []).length;
+            players = (data.team || []).map(p => p.name);
+        } else if (version === 'v3') {
             playerCount = (data.team || []).length;
             eventCount = (data.events || []).length;
             players = (data.team || []).map(p => p.name);
@@ -522,8 +675,9 @@
             showStatus('detect-status', 'Detected: ' + version.toUpperCase() + ' share link', false);
             document.getElementById('from-version').value = version;
 
-            // Auto-set "to" to the other version
-            if (version === 'v3') document.getElementById('to-version').value = 'v4';
+            // Auto-set "to" to the latest version (unless already latest)
+            if (version === 'v2') document.getElementById('to-version').value = 'v4';
+            else if (version === 'v3') document.getElementById('to-version').value = 'v4';
             else if (version === 'v4') document.getElementById('to-version').value = 'v3';
 
             // Show preview
@@ -577,19 +731,26 @@
         let compressedOutput;
         let outputPath;
 
-        if (fromVersion === 'v3' && toVersion === 'v4') {
-            converted = v3ToV4(data);
-            compressedOutput = compressV4(JSON.stringify(converted));
-            outputPath = '/v4/';
-        } else if (fromVersion === 'v4' && toVersion === 'v3') {
-            converted = v4ToV3(data);
-            compressedOutput = compressV3(JSON.stringify(converted));
-            outputPath = '/v3/';
-        } else {
+        const conversionKey = fromVersion + '->' + toVersion;
+        const conversions = {
+            'v2->v3': { fn: v2ToV3, compress: compressV3, path: '/v3/' },
+            'v2->v4': { fn: v2ToV4, compress: compressV4, path: '/v4/' },
+            'v3->v2': { fn: v3ToV2, compress: compressV2, path: '/v2/' },
+            'v3->v4': { fn: v3ToV4, compress: compressV4, path: '/v4/' },
+            'v4->v2': { fn: v4ToV2, compress: compressV2, path: '/v2/' },
+            'v4->v3': { fn: v4ToV3, compress: compressV3, path: '/v3/' }
+        };
+
+        const conv = conversions[conversionKey];
+        if (!conv) {
             showStatus('convert-status', 'Unsupported conversion: ' + fromVersion + ' to ' + toVersion, true);
             document.getElementById('output-card').style.display = 'block';
             return;
         }
+
+        converted = conv.fn(data);
+        compressedOutput = conv.compress(JSON.stringify(converted));
+        outputPath = conv.path;
 
         const outputUrl = BASE_URL + outputPath + '?data=' + encodeURIComponent(compressedOutput);
 
