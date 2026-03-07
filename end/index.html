@@ -331,6 +331,34 @@
         } catch (e) { return null; }
     }
 
+    // ===== Short URL resolution =====
+    const SHORT_URL_HOSTS = [
+        'tinyurl.com', 'bit.ly', 'bitly.com', 't.co', 'goo.gl',
+        'ow.ly', 'is.gd', 'v.gd', 'buff.ly', 'rb.gy', 'shorturl.at',
+        'tiny.cc', 'lnkd.in', 'surl.li', 'cutt.ly'
+    ];
+
+    function isShortUrl(url) {
+        try {
+            const parsed = new URL(url.trim());
+            return SHORT_URL_HOSTS.some(host => parsed.hostname === host || parsed.hostname === 'www.' + host);
+        } catch (e) {
+            return false;
+        }
+    }
+
+    async function resolveUrl(url) {
+        try {
+            const response = await fetch('/api/resolve-url?url=' + encodeURIComponent(url.trim()));
+            if (!response.ok) throw new Error('Resolve failed');
+            const data = await response.json();
+            if (data.url) return data.url;
+        } catch (e) {
+            console.error('Failed to resolve short URL:', e);
+        }
+        return url;
+    }
+
     // ===== Parse any share URL into normalized game data =====
     function parseShareUrl(url) {
         let dataParam;
@@ -570,7 +598,7 @@
 
     // ===== Report Generation =====
 
-    function generateReport() {
+    async function generateReport() {
         const inputs = document.querySelectorAll('.game-url');
         const urls = [];
         inputs.forEach(input => {
@@ -581,6 +609,16 @@
         if (urls.length === 0) {
             showStatus('input-status', 'Please paste at least one share link.', true);
             return;
+        }
+
+        // Resolve any short URLs in parallel
+        const shortUrlIndexes = urls.map((url, i) => isShortUrl(url) ? i : -1).filter(i => i >= 0);
+        if (shortUrlIndexes.length > 0) {
+            showStatus('input-status', `Resolving ${shortUrlIndexes.length} short URL${shortUrlIndexes.length > 1 ? 's' : ''}...`, false);
+            const resolvePromises = shortUrlIndexes.map(async i => {
+                urls[i] = await resolveUrl(urls[i]);
+            });
+            await Promise.all(resolvePromises);
         }
 
         const games = [];
